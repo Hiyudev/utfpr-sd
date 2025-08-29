@@ -1,8 +1,9 @@
 import pika
 import datetime
 import uuid
-import json
 from faker import Faker
+
+from common.serial import serialize_leilao
 
 # MS-Leilão
 # Routing-key "leilao_iniciado" envia um objeto serializado
@@ -28,15 +29,6 @@ def generate_random_leilao():
         "start": random_start,
         "end": random_end,
     }
-
-
-def serialize_leilao(leilao: dict[str, any]):
-    el = leilao.copy()
-
-    # Converte datetime.datetime para número
-    el["start"] = el["start"].timestamp()
-    el["end"] = el["end"].timestamp()
-    return el
 
 
 def main():
@@ -77,8 +69,7 @@ def main():
                 start_element: dict[str, any] = leiloes[sorted_starts[0][0]]
 
                 if already_passed_start:
-                    el = serialize_leilao(start_element)
-                    message = json.dumps(el).encode("utf-8")
+                    message = serialize_leilao(start_element)
 
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
