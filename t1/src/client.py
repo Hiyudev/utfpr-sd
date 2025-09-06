@@ -3,13 +3,17 @@ import json
 import datetime
 import uuid
 import os
+import sys
 
 from simple_term_menu import TerminalMenu
 from cryptography.hazmat.primitives.asymmetric import rsa, padding
 from cryptography.hazmat.primitives import serialization, hashes
 from threading import Thread, Lock
 
-from serial import deserialize_leilao
+# Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from common.serial import deserialize_leilao
 
 lock = Lock()
 
@@ -35,15 +39,55 @@ def consume_worker(lock: Lock, channel, queue_name):
             f"[debug] Mensagem recebida com a routing key {method.routing_key} foi: {body}"
         )
         lock.release()
+        ch.basic_ack(delivery_tag=method.delivery_tag)
 
-    channel.basic_consume(
-        queue=queue_name, on_message_callback=on_message, auto_ack=True
-    )
+    channel.basic_consume(queue=queue_name, on_message_callback=on_message)
 
     channel.start_consuming()
 
 
-def ui_worker(lock: Lock, channel, user_id, private_key, queue_name):
+def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
+    if len(leiloes) == 0:
+        print("Nenhum leilão disponível no momento.")
+        return
+
+    options = [l["id"] for l in leiloes]
+    terminal_menu = TerminalMenu(options)
+    menu_entry_index = terminal_menu.show()
+    leilao: dict[str, str | datetime.datetime] = leiloes[menu_entry_index]
+
+    value = input("Digite o valor do lance: ")
+    print(f"Você deu um lance de {value} no leilão {leilao['id']}")
+
+    # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
+    message = json.dumps(
+        {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
+    ).encode("utf-8")
+
+    # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
+    signature = private_key.sign(
+        message,
+        padding.PSS(
+            mgf=padding.MGF1(hashes.SHA256()),
+            salt_length=padding.PSS.MAX_LENGTH,
+        ),
+        hashes.SHA256(),
+    )
+
+    # Requisito 2.3 - Publica lances na fila de mensagens lance_realizado.
+    channel.basic_publish(
+        exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=signature
+    )
+
+    # Requisito 2.4 - Ao dar um lance em um leilão, o cliente atuará como consumidor desse leilão
+    channel.queue_bind(
+        exchange=EXCHANGE_NAME,
+        queue=queue_name,
+        routing_key=f"leilao_{leilao['id']}",
+    )
+
+
+def show_mainmenu(lock: Lock, channel, user_id, private_key, queue_name):
     while True:
         options = ["Listar leilões", "Lançar um lance", "Verificar logs", None, "Sair"]
         terminal_menu = TerminalMenu(options, skip_empty_entries=True)
@@ -57,39 +101,7 @@ def ui_worker(lock: Lock, channel, user_id, private_key, queue_name):
                 )
             lock.release()
         elif menu_entry_index == 1:
-            l_options = [l["id"] for l in leiloes]
-            l_terminal_menu = TerminalMenu(l_options)
-            l_menu_entry_index = l_terminal_menu.show()
-
-            value = input("Digite o valor do lance: ")
-            leilao: dict[str, str | datetime.datetime] = leiloes[l_menu_entry_index]
-
-            # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
-            message = json.dumps(
-                {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
-            ).encode("utf-8")
-
-            # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
-            signature = private_key.sign(
-                message,
-                padding.PSS(
-                    mgf=padding.MGF1(hashes.SHA256()),
-                    salt_length=padding.PSS.MAX_LENGTH,
-                ),
-                hashes.SHA256(),
-            )
-
-            # Requisito 2.3 - Publica lances na fila de mensagens lance_realizado.
-            channel.basic_publish(
-                exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=signature
-            )
-
-            # Requisito 2.4 - Ao dar um lance em um leilão, o cliente atuará como consumidor desse leilão
-            channel.queue_bind(
-                exchange=EXCHANGE_NAME,
-                queue=queue_name,
-                routing_key=f"leilao_{leilao['id']}",
-            )
+            show_submenu(lock, channel, user_id, private_key, queue_name)
         elif menu_entry_index == 2:
             lock.acquire()
             for log in logs:
@@ -146,18 +158,19 @@ def main():
         ),
         daemon=True,
     )
-    ui_thread = Thread(
-        target=ui_worker,
-        args=(lock, channel, user_id, private_key, queue_name),
-        daemon=True,
-    )
 
     try:
         consume_thread.start()
-        ui_thread.start()
+
+        show_mainmenu(
+            lock,
+            channel,
+            user_id,
+            private_key,
+            queue_name,
+        )
 
         consume_thread.join()
-        ui_thread.join()
     except Exception as e:
         print("Expection: ", e)
 

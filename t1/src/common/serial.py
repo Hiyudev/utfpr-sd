@@ -29,21 +29,22 @@ def serialize_leilao(leilao: dict[str, str | datetime]) -> bytes:
 
 
 def deserialize_leilao(leilao: bytes) -> dict[str, str | datetime]:
+    dict_el = json.loads(leilao.decode("utf-8"))
+    
     # Verifica se as chaves existem
-    assert "id" in leilao, "Key 'id' does not exist in the dictionary."
+    assert "id" in dict_el, "Key 'id' does not exist in the dictionary."
     assert (
-        "description" in leilao
+        "description" in dict_el
     ), "Key 'description' does not exist in the dictionary."
-    assert "start" in leilao, "Key 'start' does not exist in the dictionary."
-    assert "end" in leilao, "Key 'end' does not exist in the dictionary."
+    assert "start" in dict_el, "Key 'start' does not exist in the dictionary."
+    assert "end" in dict_el, "Key 'end' does not exist in the dictionary."
 
     # Verifica os tipos
-    assert isinstance(leilao["id"], str), "Key 'id' must be a string."
-    assert isinstance(leilao["description"], str), "Key 'description' must be a string."
-    assert isinstance(leilao["start"], float), "Key 'start' must be a float."
-    assert isinstance(leilao["end"], float), "Key 'end' must be a float."
+    assert isinstance(dict_el["id"], str), "Key 'id' must be a string."
+    assert isinstance(dict_el["description"], str), "Key 'description' must be a string."
+    assert isinstance(dict_el["start"], float), "Key 'start' must be a float."
+    assert isinstance(dict_el["end"], float), "Key 'end' must be a float."
 
-    dict_el = json.loads(leilao.decode("utf-8"))
 
     # Converte número para datetime.datetime
     dict_el["start"] = datetime.fromtimestamp(dict_el["start"])

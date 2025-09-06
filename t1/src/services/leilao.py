@@ -3,11 +3,13 @@ import datetime
 import uuid
 from faker import Faker
 
-from common.serial import serialize_leilao
+import sys
+import os
 
-# MS-Leilão
-# Routing-key "leilao_iniciado" envia um objeto serializado
-# Routing-key "leilao_finalizado" envia apenas o ID do leilão finalizado
+# Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from common.serial import serialize_leilao
 
 # Variáveis globais
 LEILOES = 3
@@ -17,7 +19,7 @@ EXCHANGE_NAME = "exchange"
 def generate_random_leilao():
     fake = Faker()
     random_id = str(uuid.uuid4().hex)
-    random_description = fake.sentence(100)
+    random_description = fake.sentence(5)
     random_start: datetime.datetime = fake.future_datetime(
         end_date=datetime.timedelta(seconds=30)
     )
