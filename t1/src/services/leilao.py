@@ -34,7 +34,7 @@ def generate_random_leilao():
 
 
 def main():
-    # Inicializa a lista de leiloes
+    # Requisito 3.1 - Mantém internamente uma lista pré-configurada (hardcoded) de leilões com: ID do leilão, descrição, data e hora de início e fim, status (ativo, encerrado).
     leiloes: list[dict[str, any]] = []
     for _ in range(LEILOES):
         leiloes.append(generate_random_leilao())
@@ -73,6 +73,7 @@ def main():
                 if already_passed_start:
                     message = serialize_leilao(start_element)
 
+                    # Requisito 3.2 - O leilão de um determinado produto deve ser iniciado quando o tempo definido para esse leilão for atingido. Quando um leilão começa, ele publica o evento na fila: leilao_iniciado.
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
                         routing_key="leilao_iniciado",
@@ -91,6 +92,7 @@ def main():
                 if already_passed_end:
                     message = end_element.encode("utf-8")
 
+                    # Requisito 3.3 - O leilão de um determinado produto deve ser finalizado quando o tempo definido para esse leilão expirar. Quando um leilão termina, ele publica o evento na fila: leilao_finalizado.
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
                         routing_key="leilao_finalizado",
