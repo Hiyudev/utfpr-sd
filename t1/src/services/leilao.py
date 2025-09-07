@@ -100,7 +100,7 @@ def main():
 
                     print(f"[MS-Leilao] Leilao com o id {end_element} foi finalizado.")
     except Exception as e:
-        print("Expection: ", e)
+        print("Exception: ", e)
 
     connection.close()
 

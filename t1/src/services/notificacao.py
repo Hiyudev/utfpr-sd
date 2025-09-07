@@ -34,7 +34,7 @@ def main():
     def on_message(ch, method, properties, body):
         if method.routing_key == "lance_validado":
             # TODO
-            pass
+            print("teste  - lance validado/apagar depois")
         elif method.routing_key == "leilao_vencedor":
             # TODO
             pass
@@ -42,7 +42,7 @@ def main():
         ch.basic_ack(delivery_tag=method.delivery_tag)
 
     channel.basic_consume(
-        queue=queue_name, on_message_callback=on_message, auto_ack=True
+        queue=queue_name, on_message_callback=on_message
     )
 
     channel.start_consuming()

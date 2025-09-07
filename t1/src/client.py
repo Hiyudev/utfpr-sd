@@ -1,5 +1,6 @@
 import pika
 import json
+import base64
 import datetime
 import uuid
 import os
@@ -57,26 +58,27 @@ def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
     leilao: dict[str, str | datetime.datetime] = leiloes[menu_entry_index]
 
     value = input("Digite o valor do lance: ")
+    b_value = value.encode('utf-8')
     print(f"Você deu um lance de {value} no leilão {leilao['id']}")
-
-    # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
-    message = json.dumps(
-        {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
-    ).encode("utf-8")
-
+    
     # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
     signature = private_key.sign(
-        message,
+        b_value,
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH,
         ),
         hashes.SHA256(),
     )
+    encoded_signature = base64.b64encode(signature).decode('utf-8')
+        # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
+    message = json.dumps(
+        {"user_id": user_id, "leilao_id": leilao["id"], "value": value, "signature": encoded_signature}
+    ).encode("utf-8")
 
     # Requisito 2.3 - Publica lances na fila de mensagens lance_realizado.
     channel.basic_publish(
-        exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=signature
+        exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=message
     )
 
     # Requisito 2.4 - Ao dar um lance em um leilão, o cliente atuará como consumidor desse leilão
@@ -172,7 +174,7 @@ def main():
 
         consume_thread.join()
     except Exception as e:
-        print("Expection: ", e)
+        print("Exception: ", e)
 
 
 if __name__ == "__main__":
