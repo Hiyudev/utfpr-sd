@@ -124,7 +124,7 @@ def main():
             {"leilao_id": leilao_id, "lance_vencedor": lance_vencedor, "cliente_vencedor": cliente_vencedor}
             ).encode("utf-8")
             cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
-            #ch.basic_ack(delivery_tag=method.delivery_tag)
+            
             connection.add_callback_threadsafe(cb)
             channel.basic_publish(exchange=EXCHANGE_NAME, body=message, routing_key='leilao_vencedor')
 
@@ -132,6 +132,7 @@ def main():
         queue=queue_name, on_message_callback=on_message
     )
 
+    print("[MS-Lance] Waiting for messages. To exit press CTRL+C")
     channel.start_consuming()
 
 
