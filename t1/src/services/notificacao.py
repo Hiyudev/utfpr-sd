@@ -6,7 +6,7 @@ import os
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from common.serial import serialize_leilao
+from common.serial import serialize_dict, deserialize_dict
 
 # Variáveis globais
 EXCHANGE_NAME = "exchange"
@@ -33,20 +33,32 @@ def main():
 
     # Requisito 5.2 - Publica esses eventos nas filas específicas para cada leilão, de acordo com o seu ID (leilao_1, leilao_2, ...), de modo que somente os consumidores interessados nesses leilões recebam as notificações correspondentes.
     def on_message(ch, method, properties, body):
+        json_body = deserialize_dict(body)
+
         if method.routing_key == "lance_validado":
-            # TODO
-            print("teste  - lance validado/apagar depois")
+            assert json_body["user_id"]
+            assert json_body["leilao_id"]
+            assert json_body["value"]
+
+            json_body["type"] = "lance_validado"
         elif method.routing_key == "leilao_vencedor":
-            # TODO
-            pass
+            assert json_body["leilao_id"]
+            assert json_body["lance_vencedor"]
+            assert json_body["cliente_vencedor"]
+
+            json_body["type"] = "leilao_vencedor"
+
+        routing_key = f"leilao_{json_body['leilao_id']}"
+        channel.basic_publish(
+            exchange=EXCHANGE_NAME,
+            routing_key=routing_key,
+            body=serialize_dict(json_body),
+        )
 
         cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
-        #ch.basic_ack(delivery_tag=method.delivery_tag)
         connection.add_callback_threadsafe(cb)
 
-    channel.basic_consume(
-        queue=queue_name, on_message_callback=on_message
-    )
+    channel.basic_consume(queue=queue_name, on_message_callback=on_message)
 
     channel.start_consuming()
 

@@ -121,7 +121,7 @@ def main():
             cliente_vencedor = [d.get('winner') for d in leiloes if leilao_id in d]
 
             message = json.dumps(
-            {"leilao_id": leilao_id, "lance vencedor": lance_vencedor, "cliente_vencedor": cliente_vencedor}
+            {"leilao_id": leilao_id, "lance_vencedor": lance_vencedor, "cliente_vencedor": cliente_vencedor}
             ).encode("utf-8")
             cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
             #ch.basic_ack(delivery_tag=method.delivery_tag)
