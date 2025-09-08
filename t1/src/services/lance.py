@@ -93,6 +93,7 @@ def main():
                     lance_vencedor = [d.get('highest_bid') for d in leiloes if lance['leilao_id'] in d['id']]
                     if int(lance['value']) > int(lance_vencedor[0]):
                         #Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
+                        [d.update(highest_bid=lance['value']) for d in leiloes if lance['leilao_id'] in d['id']]
                         channel.basic_publish(exchange=EXCHANGE_NAME, body=body, routing_key="lance_validado")
                         print('[MS-Lance] lance validado!')
                     else:
