@@ -1,5 +1,8 @@
 import pika
 import base64
+import json
+import functools
+import datetime
 import sys
 import os
 
@@ -10,9 +13,12 @@ from cryptography.hazmat.primitives import serialization, hashes
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from common.serial import deserialize_dict
+from common.serial import deserialize_dict, deserialize_leilao
 
 # Variáveis globais
+
+leiloes: list[dict[str, str | datetime.datetime]] = []
+
 EXCHANGE_NAME = "exchange"
 
 def main():
@@ -43,11 +49,13 @@ def main():
     def on_message(ch, method, properties, body):
         if method.routing_key == "lance_realizado":
             lance = deserialize_dict(body)
-            print("lance recebido: ", lance)
 
             #necessario converter a assinatura e valor para bytes pra permitir o processo de verificacao
             b_signature = base64.b64decode(lance['signature'])
-            b_value = lance['value'].encode('utf-8')
+            #b_value = lance['value'].encode('utf-8')
+            b_message = json.dumps(
+            {"user_id": lance['user_id'], "leilao_id": lance['leilao_id'], "value": lance['value']}
+            ).encode("utf-8")
 
             #esses blocos try catch estavam mais para encontrar os erros que estavam aparecendo, se achar feio pode retirar
 
@@ -56,17 +64,17 @@ def main():
                 with open(f"./keys/{lance['user_id']}.pem", "rb") as f:
                     public_key_data = f.read()
             except:
-                print("abertura de arquivo falhou!")
+                print("[MS-Lance] abertura de arquivo falhou!")
                 
             try:
                 public_key = load_pem_public_key(public_key_data)
             except:
-                print("carregamento da chave falhou!")
+                print("[MS-Lance] carregamento da chave falhou!")
 
             try:
                 public_key.verify(
                 b_signature,
-                b_value,
+                b_message,
                 padding.PSS(
                     mgf=padding.MGF1(hashes.SHA256()),
                     salt_length=padding.PSS.MAX_LENGTH
@@ -74,33 +82,53 @@ def main():
                 hashes.SHA256()
             )
             except Exception as e:
-                print("Exception: ", type(e))
+                print("[MS-Lance] Exception: ", type(e))
             else:
-                print("Assinatura valida!")
-            #checa se leilao existe
+                print("[MS-Lance] Assinatura valida!")
 
-            #checa se eh maior lance
-
-            #Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
-
-            channel.basic_publish(exchange=EXCHANGE_NAME, body=body, routing_key="lance_validado")
-            print('lance validado!')
-
+                #checa se id do leilao existe em leiloes
+                if any(lance['leilao_id'] in d['id'] for d in leiloes):
+                    print('[MS-Lance] leilao existe!')
+                    #checa se eh maior lance
+                    lance_vencedor = [d.get('highest_bid') for d in leiloes if lance['leilao_id'] in d['id']]
+                    if int(lance['value']) > int(lance_vencedor[0]):
+                        #Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
+                        channel.basic_publish(exchange=EXCHANGE_NAME, body=body, routing_key="lance_validado")
+                        print('[MS-Lance] lance validado!')
+                    else:
+                        print('[MS-Lance] lance nao eh maior que atual!')
+                else:
+                    print('[MS-Lance] leilao nao existe!')
 
         if method.routing_key == "leilao_iniciado":
             #Somente aceitará o lance se: ID do leilão existir e se o leilão estiver ativo;
-            #TODO: Imagino que sera necessario manter os leiloes ativos igual no client.py? mesma estrutura, mantendo tambem o maior lance para cada
-            pass
+            leilao = deserialize_leilao(body)
+            leilao['highest_bid'] = '0'
+            leilao['winner'] = 'ninguem'
+            leiloes.append(leilao)
+            
 
         if method.routing_key == "leilao_finalizado":
-            #TODO: Requisito 4.5 - Ao finalizar um leilão, deve publicar na fila leilao_vencedor,
+            #Requisito 4.5 - Ao finalizar um leilão, deve publicar na fila leilao_vencedor,
             #informando o ID do leilão, o ID do vencedor do leilão e o valor
             #negociado. O vencedor é o que efetuou o maior lance válido até o
             #encerramento.
-            pass
+            leilao_id = body.decode('utf-8')
+
+            lance_vencedor = [d.get('highest_bid') for d in leiloes if leilao_id in d]
+
+            cliente_vencedor = [d.get('winner') for d in leiloes if leilao_id in d]
+
+            message = json.dumps(
+            {"leilao_id": leilao_id, "lance vencedor": lance_vencedor, "cliente_vencedor": cliente_vencedor}
+            ).encode("utf-8")
+            cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
+            #ch.basic_ack(delivery_tag=method.delivery_tag)
+            connection.add_callback_threadsafe(cb)
+            channel.basic_publish(exchange=EXCHANGE_NAME, body=message, routing_key='leilao_vencedor')
 
     channel.basic_consume(
-        queue=queue_name, on_message_callback=on_message, auto_ack=True
+        queue=queue_name, on_message_callback=on_message
     )
 
     channel.start_consuming()

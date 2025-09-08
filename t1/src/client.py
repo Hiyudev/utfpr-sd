@@ -2,6 +2,7 @@ import pika
 import json
 import base64
 import datetime
+import functools
 import uuid
 import os
 import sys
@@ -14,7 +15,7 @@ from threading import Thread, Lock
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
-from common.serial import deserialize_leilao
+from common.serial import deserialize_leilao, deserialize_dict, serialize_dict
 
 lock = Lock()
 
@@ -25,7 +26,7 @@ logs: list[str] = []
 EXCHANGE_NAME = "exchange"
 
 
-def consume_worker(lock: Lock, channel, queue_name):
+def consume_worker(lock: Lock, channel, queue_name, connection):
     def on_message(ch, method, properties, body):
         if method.routing_key == "leilao_iniciado":
             leilao = deserialize_leilao(body)
@@ -40,7 +41,9 @@ def consume_worker(lock: Lock, channel, queue_name):
             f"[debug] Mensagem recebida com a routing key {method.routing_key} foi: {body}"
         )
         lock.release()
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
+        #ch.basic_ack(delivery_tag=method.delivery_tag)
+        connection.add_callback_threadsafe(cb)
 
     channel.basic_consume(queue=queue_name, on_message_callback=on_message)
 
@@ -58,12 +61,19 @@ def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
     leilao: dict[str, str | datetime.datetime] = leiloes[menu_entry_index]
 
     value = input("Digite o valor do lance: ")
+    
     b_value = value.encode('utf-8')
+
+    message = json.dumps(
+    {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
+    ).encode("utf-8")
+
+
     print(f"Você deu um lance de {value} no leilão {leilao['id']}")
     
     # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
     signature = private_key.sign(
-        b_value,
+        message,
         padding.PSS(
             mgf=padding.MGF1(hashes.SHA256()),
             salt_length=padding.PSS.MAX_LENGTH,
@@ -72,9 +82,13 @@ def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
     )
     encoded_signature = base64.b64encode(signature).decode('utf-8')
         # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
-    message = json.dumps(
-        {"user_id": user_id, "leilao_id": leilao["id"], "value": value, "signature": encoded_signature}
-    ).encode("utf-8")
+    message = deserialize_dict(message)
+    message['signature'] = encoded_signature
+    message = serialize_dict(message)
+
+    #message = json.dumps(
+    #    {"user_id": user_id, "leilao_id": leilao["id"], "value": value, "signature": encoded_signature}
+    #).encode("utf-8")
 
     # Requisito 2.3 - Publica lances na fila de mensagens lance_realizado.
     channel.basic_publish(
@@ -157,6 +171,7 @@ def main():
             lock,
             channel,
             queue_name,
+            connection,
         ),
         daemon=True,
     )

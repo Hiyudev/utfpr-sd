@@ -1,5 +1,6 @@
 import pika
 import sys
+import functools
 import os
 
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
@@ -39,7 +40,9 @@ def main():
             # TODO
             pass
 
-        ch.basic_ack(delivery_tag=method.delivery_tag)
+        cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
+        #ch.basic_ack(delivery_tag=method.delivery_tag)
+        connection.add_callback_threadsafe(cb)
 
     channel.basic_consume(
         queue=queue_name, on_message_callback=on_message
