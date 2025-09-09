@@ -155,21 +155,33 @@ def main():
                     "cliente_vencedor": cliente_vencedor,
                 }
             )
-            
+
             # Remove o leilão finalizado da lista de leilões ativos
             leiloes.remove(next(d for d in leiloes if leilao_id in d["id"]))
-            
+
             cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
             connection.add_callback_threadsafe(cb)
-            
+
             channel.basic_publish(
                 exchange=EXCHANGE_NAME, body=message, routing_key="leilao_vencedor"
             )
 
-    channel.basic_consume(queue=queue_name, on_message_callback=on_message, auto_ack=False)
+    channel.basic_consume(
+        queue=queue_name, on_message_callback=on_message, auto_ack=False
+    )
 
     print("[MS-Lance] Waiting for messages. To exit press CTRL+C")
-    channel.start_consuming()
+
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("[MS-Lance] Exiting...")
+        connection.close()
+
+    if connection.is_open:
+        connection.close()
+
+    return 1
 
 
 if __name__ == "__main__":

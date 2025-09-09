@@ -62,7 +62,17 @@ def main():
     channel.basic_consume(queue=queue_name, on_message_callback=on_message)
 
     print("[MS-Notificacao] Waiting for messages. To exit press CTRL+C")
-    channel.start_consuming()
+    
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("[MS-Notificacao] Exiting...")
+        connection.close()
+        
+    if connection.is_open:
+        connection.close()
+        
+    return 1
 
 
 if __name__ == "__main__":

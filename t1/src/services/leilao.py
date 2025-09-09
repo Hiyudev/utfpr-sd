@@ -12,8 +12,9 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from common.serial import serialize_leilao
 
 # Variáveis globais
-LEILOES = 5
+LEILOES = 3
 EXCHANGE_NAME = "exchange"
+ID_SUMMARY_LENGTH = 8
 
 
 def generate_random_leilao():
@@ -82,7 +83,7 @@ def main():
                     sorted_starts.pop(0)
 
                     print(
-                        f"[MS-Leilao] Leilao com o id {start_element['id']} foi iniciado."
+                        f"[MS-Leilao] Leilao com o id {start_element['id'][:ID_SUMMARY_LENGTH]} foi iniciado."
                     )
 
             if has_elements_in_ends:
@@ -100,11 +101,17 @@ def main():
                     )
                     sorted_ends.pop(0)
 
-                    print(f"[MS-Leilao] Leilao com o id {end_element} foi finalizado.")
-    except Exception as e:
-        print("Exception: ", e)
+                    print(
+                        f"[MS-Leilao] Leilao com o id {end_element[:ID_SUMMARY_LENGTH]} foi finalizado."
+                    )
+    except KeyboardInterrupt:
+        print("[MS-Leilao] Exiting...")
+        connection.close()
 
-    connection.close()
+    if connection.is_open:
+        connection.close()
+        
+    return 1
 
 
 if __name__ == "__main__":

@@ -24,3 +24,4 @@ Caso queira "resetar" o RabbitMQ:
 # Execução do projeto
 É necessário que o RabbitMQ esteja em execução.
 É necessário que mais de um terminal esteja aberto, para representar os clientes.
+É necessário que os terminais estejam abertos no diretório raiz do projeto `/sd/t1`.
