@@ -1,7 +1,6 @@
 import json
 from datetime import datetime
 
-
 def serialize_dict(d: dict) -> bytes:
     return json.dumps(d).encode("utf-8")
 
