@@ -26,21 +26,72 @@ logs: list[str] = []
 EXCHANGE_NAME = "exchange"
 
 
-def consume_worker(lock: Lock, channel, queue_name, connection):
+def consume_worker(lock: Lock, channel, queue_name, connection, user_id, private_key):
     def on_message(ch, method, properties, body):
         if method.routing_key == "leilao_iniciado":
+
+
+            #leilao: dict[str, str | datetime.datetime] = leiloes[menu_entry_index]
             leilao = deserialize_leilao(body)
+            if input(f"O leilao {leilao['id']} foi iniciado! deseja realizar um lance?") == "y":
+                value = input("Digite o valor do lance: ")
+                
+                b_value = value.encode('utf-8')
 
+                message = json.dumps(
+                {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
+                ).encode("utf-8")
+
+                lock.acquire()
+                print(f"Você deu um lance de {value} no leilão {leilao['id']}")
+                lock.release()
+
+                # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
+                signature = private_key.sign(
+                    message,
+                    padding.PSS(
+                        mgf=padding.MGF1(hashes.SHA256()),
+                        salt_length=padding.PSS.MAX_LENGTH,
+                    ),
+                    hashes.SHA256(),
+                )
+                encoded_signature = base64.b64encode(signature).decode('utf-8')
+                    # Requisito 2.3 - Cada lance contém: ID do leilão, ID do usuário, valor do lance.
+                message = deserialize_dict(message)
+                message['signature'] = encoded_signature
+                message = serialize_dict(message)
+
+                #message = json.dumps(
+                #    {"user_id": user_id, "leilao_id": leilao["id"], "value": value, "signature": encoded_signature}
+                #).encode("utf-8")
+
+                # Requisito 2.3 - Publica lances na fila de mensagens lance_realizado.
+                channel.basic_publish(
+                    exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=message
+                )
+                lock.acquire()
+                print(f"teste 1 |leilao_{leilao['id']}|")
+                lock.release()
+                # Requisito 2.4 - Ao dar um lance em um leilão, o cliente atuará como consumidor desse leilão
+                channel.queue_bind(
+                    exchange=EXCHANGE_NAME,
+                    queue=queue_name,
+                    routing_key=f"leilao_{leilao['id']}",
+                )
+            #leilao = deserialize_leilao(body)
+
+            #lock.acquire()
+            #leiloes.append(leilao)
+            #logs.append(f"[info] Leilão com o id {leilao['id']} foi iniciado")
+            #lock.release()
+        else:
+            message = deserialize_dict(body)
             lock.acquire()
-            leiloes.append(leilao)
-            logs.append(f"[info] Leilão com o id {leilao['id']} foi iniciado")
+            #logs.append(
+            #    f"[debug] Mensagem recebida com a routing key |{method.routing_key}| foi: {body}"
+            #)
+            print(body)
             lock.release()
-
-        lock.acquire()
-        logs.append(
-            f"[debug] Mensagem recebida com a routing key {method.routing_key} foi: {body}"
-        )
-        lock.release()
         cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
         #ch.basic_ack(delivery_tag=method.delivery_tag)
         connection.add_callback_threadsafe(cb)
@@ -68,9 +119,10 @@ def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
     {"user_id": user_id, "leilao_id": leilao["id"], "value": value}
     ).encode("utf-8")
 
-
+    lock.acquire()
     print(f"Você deu um lance de {value} no leilão {leilao['id']}")
-    
+    lock.release()
+
     # Requisito 2.3 - O cliente assina digitalmente cada lance com sua chave privada.
     signature = private_key.sign(
         message,
@@ -94,7 +146,9 @@ def show_submenu(lock: Lock, channel, user_id, private_key, queue_name):
     channel.basic_publish(
         exchange=EXCHANGE_NAME, routing_key="lance_realizado", body=message
     )
-
+    lock.acquire()
+    print(f"teste 1 |leilao_{leilao['id']}|")
+    lock.release()
     # Requisito 2.4 - Ao dar um lance em um leilão, o cliente atuará como consumidor desse leilão
     channel.queue_bind(
         exchange=EXCHANGE_NAME,
@@ -151,27 +205,45 @@ def main():
         )
 
     # Realiza a conexao com o RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-    channel = connection.channel()
-    channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct")
+    connection_consumer = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel_consumer = connection_consumer.channel()
+    channel_consumer.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct")
 
     # Cria uma fila com nome aleatória
-    result = channel.queue_declare(queue="", exclusive=True)
-    queue_name = result.method.queue
+    result_consumer = channel_consumer.queue_declare(queue="", exclusive=True)
+    queue_name_consumer = result_consumer.method.queue
 
     # Conecta a fila criada com o exchange, aceitando apenas mensagens com o identificador "leilao_iniciado"
     # Requisito 2.2 - Logo ao inicializar, atuará como consumidor recebendo eventos da fila leilao_iniciado.
-    channel.queue_bind(
-        exchange=EXCHANGE_NAME, queue=queue_name, routing_key="leilao_iniciado"
+    channel_consumer.queue_bind(
+        exchange=EXCHANGE_NAME, queue=queue_name_consumer, routing_key="leilao_iniciado"
     )
+
+
+        # Realiza a conexao com o RabbitMQ
+    connection_publisher = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel_publisher = connection_publisher.channel()
+    channel_publisher.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct")
+
+    # Cria uma fila com nome aleatória
+    result_publisher = channel_publisher.queue_declare(queue="", exclusive=True)
+    queue_name_publisher = result_publisher.method.queue
+
+    # Conecta a fila criada com o exchange, aceitando apenas mensagens com o identificador "leilao_iniciado"
+    # Requisito 2.2 - Logo ao inicializar, atuará como consumidor recebendo eventos da fila leilao_iniciado.
+    #channel_publisher.queue_bind(
+    #    exchange=EXCHANGE_NAME, queue=queue_name_publisher, routing_key="leilao_iniciado"
+    #)
 
     consume_thread = Thread(
         target=consume_worker,
         args=(
             lock,
-            channel,
-            queue_name,
-            connection,
+            channel_consumer,
+            queue_name_consumer,
+            connection_consumer,
+            user_id,
+            private_key,
         ),
         daemon=True,
     )
@@ -179,13 +251,13 @@ def main():
     try:
         consume_thread.start()
 
-        show_mainmenu(
-            lock,
-            channel,
-            user_id,
-            private_key,
-            queue_name,
-        )
+        #show_mainmenu(
+        #    lock,
+        #    channel_publisher,
+        #    user_id,
+        #    private_key,
+        #    queue_name_publisher,
+        #)
 
         consume_thread.join()
     except Exception as e:

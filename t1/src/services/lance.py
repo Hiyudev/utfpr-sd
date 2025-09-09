@@ -94,6 +94,7 @@ def main():
                     if int(lance['value']) > int(lance_vencedor[0]):
                         #Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
                         [d.update(highest_bid=lance['value']) for d in leiloes if lance['leilao_id'] in d['id']]
+                        [d.update(winner=lance['user_id']) for d in leiloes if lance['leilao_id'] in d ['id']]
                         channel.basic_publish(exchange=EXCHANGE_NAME, body=body, routing_key="lance_validado")
                         print('[MS-Lance] lance validado!')
                     else:
@@ -114,11 +115,16 @@ def main():
             #informando o ID do leilão, o ID do vencedor do leilão e o valor
             #negociado. O vencedor é o que efetuou o maior lance válido até o
             #encerramento.
+
+            print("pacote recebido: ", body)
             leilao_id = body.decode('utf-8')
+            print("leilao id: ", leilao_id)
 
-            lance_vencedor = [d.get('highest_bid') for d in leiloes if leilao_id in d]
+            lance_vencedor = [d.get('highest_bid') for d in leiloes if leilao_id in d['id']]
 
-            cliente_vencedor = [d.get('winner') for d in leiloes if leilao_id in d]
+            cliente_vencedor = [d.get('winner') for d in leiloes if leilao_id in d['id']]
+
+            print("lance_vencedor: ", lance_vencedor, "cliente_vencedor: ", cliente_vencedor)
 
             message = json.dumps(
             {"leilao_id": leilao_id, "lance_vencedor": lance_vencedor, "cliente_vencedor": cliente_vencedor}

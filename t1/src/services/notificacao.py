@@ -49,6 +49,7 @@ def main():
             json_body["type"] = "leilao_vencedor"
 
         routing_key = f"leilao_{json_body['leilao_id']}"
+        print(f"[debug] Mensagem recebida com a routing key |{routing_key}|")
         channel.basic_publish(
             exchange=EXCHANGE_NAME,
             routing_key=routing_key,

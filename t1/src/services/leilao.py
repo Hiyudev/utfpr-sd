@@ -12,7 +12,7 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from common.serial import serialize_leilao
 
 # Variáveis globais
-LEILOES = 3
+LEILOES = 5
 EXCHANGE_NAME = "exchange"
 
 
@@ -21,7 +21,7 @@ def generate_random_leilao():
     random_id = str(uuid.uuid4().hex)
     random_description = fake.sentence(5)
     random_start: datetime.datetime = fake.future_datetime(
-        end_date=datetime.timedelta(seconds=30)
+        end_date=datetime.timedelta(seconds=10)
     )
     random_end: datetime.datetime = random_start + datetime.timedelta(seconds=20)
 
