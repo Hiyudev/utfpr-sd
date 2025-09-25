@@ -13,8 +13,8 @@ from simple_term_menu import TerminalMenu
 
 class Peer(object):
     name: str
-    heartbeat_ms = 200
-    margin_ms = 5000
+    heartbeat_s = 2
+    timeout_s = 3 * heartbeat_s
     peer_dict: dict[str, float] = {}
 
     @Pyro5.api.expose
@@ -50,8 +50,8 @@ def _init_peer():
         break
 
     uri = daemon.register(
-        Peer.heartbeat
-    )  # register the greeting maker as a Pyro object
+        Peer()
+    )  # register the Peer instance as a Pyro object
     name_server.register(
         peer_name, uri
     )  # register the object with a name in the name server
@@ -67,27 +67,30 @@ def _peer_request_worker(daemon: Daemon):
 
 def _peer_heartbeat_worker():    
     while True:
-        sleep(Peer.heartbeat_ms / 1000)
+        sleep(Peer.heartbeat_s)
 
+        removed_keys: list[str] = []
         for key, value in Peer.peer_dict.items():
             now = time()
             
-            print(f"Peer.margin_ms: ", Peer.margin_ms)
-            print(f"now - value", now - value)
-            
-            if now - value > Peer.margin_ms:
+            if now - value > Peer.timeout_s:
                 print(f" [*] {key} has died.")
-                Peer.peer_dict.pop(key)
+                removed_keys.append(key)
+
+        for removed_key in removed_keys:
+            Peer.peer_dict.pop(removed_key)
 
         for key in list(Peer.peer_dict.keys()):
             print(f" [*] Connecting to {key}")
             
             name_server = locate_ns()
             t_uri = name_server.lookup(key)
-            print(t_uri, Peer.name)
-            t_peer = Proxy(t_uri)
-            print(t_peer.__annotations__)
-            t_peer.heartbeat(Peer.name)
+            
+            try:
+                t_peer = Proxy(t_uri)
+                t_peer.heartbeat(Peer.name)
+            except Exception as e:
+                print(f" [*] Error: {e}")
 
 
 def _init_menu():
