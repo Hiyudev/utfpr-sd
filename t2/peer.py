@@ -14,6 +14,7 @@ from apscheduler.schedulers.background import BackgroundScheduler
 
 scheduler = BackgroundScheduler()
 
+
 class Peer(object):
     name: str
     heartbeat_s = 2
@@ -22,7 +23,7 @@ class Peer(object):
     request_timestamp: float = -1
     reply_count = -1
     maximum_count = -1
-    
+
     timeout_job = None
     state: str = "RELEASED"
 
@@ -61,11 +62,13 @@ class Peer(object):
                 if answer:
                     Peer.reply_count += 1
             except Exception as e:
-                print(f" [*] Error: {e}")
+                continue
 
         if Peer.reply_count == Peer.maximum_count:
             Peer.state = "HELD"
-            Peer.timeout_job = scheduler.add_job(Peer.exit_section, 'interval', minutes=1)
+            Peer.timeout_job = scheduler.add_job(
+                Peer.exit_section, trigger="interval", seconds=10
+            )
 
     def exit_section():
         if Peer.state != "HELD":
@@ -81,8 +84,8 @@ class Peer(object):
                 t_peer = Proxy(t_uri)
                 t_peer.release()
             except Exception as e:
-                print(f" [*] Error: {e}")
-                
+                continue
+
         Peer.queued_request_list.clear()
         Peer.timeout_job.remove()
         Peer.timeout_job = None
@@ -104,7 +107,9 @@ class Peer(object):
 
         if Peer.reply_count == Peer.maximum_count:
             Peer.state = "HELD"
-            Peer.timeout_job = scheduler.add_job(Peer.exit_section, 'interval', minutes=1)
+            Peer.timeout_job = scheduler.add_job(
+                Peer.exit_section, trigger="interval", seconds=10
+            )
 
 
 def _init_peer():
@@ -150,18 +155,23 @@ def _peer_heartbeat_worker():
         sleep(Peer.heartbeat_s)
 
         removed_keys: list[str] = []
+        enter_section = False
         for key, value in Peer.peer_dict.items():
             now = time()
 
             if now - value > Peer.timeout_s:
                 print(f" [*] {key} has died.")
                 removed_keys.append(key)
-                
+
                 if Peer.state == "WANTED":
-                    Peer.enter_section()
+                    enter_section = True
 
         for removed_key in removed_keys:
             Peer.peer_dict.pop(removed_key)
+
+        if enter_section:
+            Peer.state = "RELEASED"
+            Peer.enter_section()
 
         for key in list(Peer.peer_dict.keys()):
             name_server = locate_ns()
@@ -171,7 +181,7 @@ def _peer_heartbeat_worker():
                 t_peer = Proxy(t_uri)
                 t_peer.heartbeat(Peer.name)
             except Exception as e:
-                print(f" [*] Error: {e}")
+                continue
 
 
 def _init_menu(threads: list[PyThreadKiller]):
@@ -210,6 +220,7 @@ def _init_menu(threads: list[PyThreadKiller]):
 
 
 def main():
+    scheduler.start()
     daemon, name_server, peer_name = _init_peer()
 
     Peer.name = peer_name
