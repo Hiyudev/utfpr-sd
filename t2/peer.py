@@ -1,6 +1,7 @@
 import random
 import string
-from time import sleep, time
+from datetime import datetime
+from time import sleep
 from PyThreadKiller import PyThreadKiller
 
 import Pyro5
@@ -9,26 +10,33 @@ from Pyro5.server import Daemon
 from simple_term_menu import TerminalMenu
 from apscheduler.schedulers.background import BackgroundScheduler
 
-# TODO: Quando um Peer morre, realiza tratamento caso o State = Wanted
-# TODO: Monopolização do recurso do Peer, utilizando Scheduler + Release
-
 scheduler = BackgroundScheduler()
+
+
+def print_with_time(message: str) -> None:
+    now = datetime.now()
+    formatted_time = now.strftime("%H:%M:%S")
+
+    print(f" [{formatted_time}] {message}")
 
 
 class Peer(object):
     name: str
-    heartbeat_s = 2
-    timeout_s = 3 * heartbeat_s
+    # Tempo para heartbeat
+    heartbeat_s: int = 2
+    # Timeout para considerar um peer perdido
+    timeout_s: int = 3 * heartbeat_s
+    # Timeout para monopolizacao do SC
+    monopoly_timeout_s: int = 10
 
     request_timestamp: float = -1
-    reply_count = -1
-    maximum_count = -1
+    reply_count: int = -1
+    maximum_count: int = -1
 
     timeout_job = None
     state: str = "RELEASED"
 
     # Guarda as requisições pendentes, que serão respondidas no momento em que o SC for liberado
-    # Sidequest: Caso tenha duplicados, prioriza elas (escalonamento)
     queued_request_list: set[str] = set()
 
     # Guarda todos os pares ativos, e seus respectivos tempos do último heartbeat/interação
@@ -37,18 +45,20 @@ class Peer(object):
     @Pyro5.api.expose
     @Pyro5.api.oneway
     def heartbeat(self, t_peer_name):
-        Peer.peer_dict[t_peer_name] = time()
+        Peer.peer_dict[t_peer_name] = datetime.now().timestamp()
 
     def enter_section():
         if Peer.state != "RELEASED":
             return None
 
         Peer.state = "WANTED"
+        print_with_time(f"State: {Peer.state}")
+
         peer_name_list = list(Peer.peer_dict.keys())
 
         Peer.maximum_count = len(peer_name_list)
         Peer.reply_count = 0
-        Peer.request_timestamp = time()
+        Peer.request_timestamp = datetime.now().timestamp()
 
         for peer_name in peer_name_list:
             name_server = locate_ns()
@@ -56,7 +66,7 @@ class Peer(object):
 
             try:
                 t_peer = Proxy(t_uri)
-                t_timestamp = time()
+                t_timestamp = datetime.now().timestamp()
                 answer: bool = t_peer.request(Peer.name, t_timestamp)
 
                 if answer:
@@ -66,8 +76,10 @@ class Peer(object):
 
         if Peer.reply_count == Peer.maximum_count:
             Peer.state = "HELD"
+            print_with_time(f"State: {Peer.state}")
+
             Peer.timeout_job = scheduler.add_job(
-                Peer.exit_section, trigger="interval", seconds=10
+                Peer.exit_section, trigger="interval", seconds=Peer.monopoly_timeout_s
             )
 
     def exit_section():
@@ -75,6 +87,7 @@ class Peer(object):
             return None
 
         Peer.state = "RELEASED"
+        print_with_time(f"State: {Peer.state}")
 
         for peer_name in Peer.queued_request_list:
             name_server = locate_ns()
@@ -107,6 +120,8 @@ class Peer(object):
 
         if Peer.reply_count == Peer.maximum_count:
             Peer.state = "HELD"
+            print_with_time(f"State: {Peer.state}")
+
             Peer.timeout_job = scheduler.add_job(
                 Peer.exit_section, trigger="interval", seconds=10
             )
@@ -124,7 +139,7 @@ def _init_peer():
 
     # Populate all possible active peers
     for key in list(existing_peer_list.keys()):
-        Peer.peer_dict[key] = time()
+        Peer.peer_dict[key] = datetime.now().timestamp()
 
     # Initialize peer name
     while True:
@@ -141,7 +156,7 @@ def _init_peer():
         peer_name, uri
     )  # register the object with a name in the name server
 
-    print(f" [*] Peer is ready as {peer_name}")
+    print_with_time(f" Peer is ready as {peer_name}")
 
     return daemon, name_server, peer_name
 
@@ -157,7 +172,7 @@ def _peer_heartbeat_worker():
         removed_keys: list[str] = []
         enter_section = False
         for key, value in Peer.peer_dict.items():
-            now = time()
+            now = datetime.now().timestamp()
 
             if now - value > Peer.timeout_s:
                 print(f" [*] {key} has died.")
@@ -171,6 +186,8 @@ def _peer_heartbeat_worker():
 
         if enter_section:
             Peer.state = "RELEASED"
+            print_with_time(f"State: {Peer.state}")
+
             Peer.enter_section()
 
         for key in list(Peer.peer_dict.keys()):
@@ -211,7 +228,7 @@ def _init_menu(threads: list[PyThreadKiller]):
             Peer.exit_section()
 
         if menu_entry == "Status atual":
-            print(Peer.state)
+            print_with_time(f"State: {Peer.state}")
             continue
 
         if menu_entry == "Listar peers ativos":

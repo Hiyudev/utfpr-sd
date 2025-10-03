@@ -1,3 +1,11 @@
+APScheduler==3.11.0
+certifi==2025.8.3
+charset-normalizer==3.4.3
+idna==3.10
 Pyro5==5.15
+PyThreadKiller==3.0.6
+requests==2.32.5
 serpent==1.41
 simple-term-menu==1.6.6
+tzlocal==5.3.1
+urllib3==2.5.0
