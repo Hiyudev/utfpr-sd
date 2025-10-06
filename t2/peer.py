@@ -27,7 +27,7 @@ class Peer(object):
     # Timeout para considerar um peer perdido - caso queira ruido no timeout
     timeout_s: int = 3 * heartbeat_s # + random.uniform(0.0, 10.0)
     # Timeout para monopolizacao do SC
-    monopoly_timeout_s: int = 20
+    monopoly_timeout_s: int = 10
 
     request_timestamp: float = -1
     reply_count: int = -1
@@ -177,7 +177,7 @@ def _peer_heartbeat_worker():
             now = datetime.now().timestamp()
 
             if now - value > Peer.timeout_s:
-                print(f" [*] {key} has died.")
+                print_with_time(f"{key} has died.")
                 removed_keys.append(key)
 
                 if Peer.state == "WANTED":
