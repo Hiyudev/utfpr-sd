@@ -24,10 +24,10 @@ class Peer(object):
     name: str
     # Tempo para heartbeat
     heartbeat_s: int = 2
-    # Timeout para considerar um peer perdido
-    timeout_s: int = 3 * heartbeat_s
+    # Timeout para considerar um peer perdido - caso queira ruido no timeout
+    timeout_s: int = 3 * heartbeat_s # + random.uniform(0.0, 10.0)
     # Timeout para monopolizacao do SC
-    monopoly_timeout_s: int = 10
+    monopoly_timeout_s: int = 20
 
     request_timestamp: float = -1
     reply_count: int = -1
@@ -46,6 +46,18 @@ class Peer(object):
     @Pyro5.api.oneway
     def heartbeat(self, t_peer_name):
         Peer.peer_dict[t_peer_name] = datetime.now().timestamp()
+
+    def reply_all_requests():
+        for peer_name in Peer.queued_request_list:
+            name_server = locate_ns()
+            t_uri = name_server.lookup(peer_name)
+
+            try:
+                t_peer = Proxy(t_uri)
+                t_peer.release()
+            except Exception as e:
+                continue
+        Peer.queued_request_list.clear()
 
     def enter_section():
         if Peer.state != "RELEASED":
@@ -89,17 +101,7 @@ class Peer(object):
         Peer.state = "RELEASED"
         print_with_time(f"State: {Peer.state}")
 
-        for peer_name in Peer.queued_request_list:
-            name_server = locate_ns()
-            t_uri = name_server.lookup(peer_name)
-
-            try:
-                t_peer = Proxy(t_uri)
-                t_peer.release()
-            except Exception as e:
-                continue
-
-        Peer.queued_request_list.clear()
+        Peer.reply_all_requests()
         Peer.timeout_job.remove()
         Peer.timeout_job = None
 
@@ -186,8 +188,10 @@ def _peer_heartbeat_worker():
 
         if enter_section:
             Peer.state = "RELEASED"
+            # Caso alguem morra, responder todos em sua lista antes de entrar na secao critica novamente
             print_with_time(f"State: {Peer.state}")
 
+            Peer.reply_all_requests()
             Peer.enter_section()
 
         for key in list(Peer.peer_dict.keys()):
@@ -208,6 +212,7 @@ def _init_menu(threads: list[PyThreadKiller]):
             "Liberar recurso",
             "Status atual",
             "Listar peers ativos",
+            "Listar votos atuais e necessarios",
             None,
             "Sair",
         ]
@@ -234,6 +239,8 @@ def _init_menu(threads: list[PyThreadKiller]):
         if menu_entry == "Listar peers ativos":
             print(Peer.peer_dict)
             continue
+        if menu_entry == "Listar votos atuais e necessarios":
+            print(f"Votos atuais: {Peer.reply_count} - Votos necessarios: {Peer.maximum_count}")
 
 
 def main():
