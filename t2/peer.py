@@ -25,9 +25,11 @@ class Peer(object):
     # Tempo para heartbeat
     heartbeat_s: int = 2
     # Timeout para considerar um peer perdido - caso queira ruido no timeout
-    timeout_s: int = 3 * heartbeat_s # + random.uniform(0.0, 10.0)
+    timeout_s: int = 10 * heartbeat_s # + random.uniform(0.0, 10.0)
     # Timeout para monopolizacao do SC
     monopoly_timeout_s: int = 10
+    
+    request_timeout_s: int = 2
 
     request_timestamp: float = -1
     reply_count: int = -1
@@ -72,19 +74,28 @@ class Peer(object):
         Peer.reply_count = 0
         Peer.request_timestamp = datetime.now().timestamp()
 
+        removed_keys: list[str] = []
         for peer_name in peer_name_list:
             name_server = locate_ns()
             t_uri = name_server.lookup(peer_name)
-
+            
             try:
                 t_peer = Proxy(t_uri)
+                t_peer._pyroTimeout = Peer.request_timeout_s
+                
                 t_timestamp = datetime.now().timestamp()
                 answer: bool = t_peer.request(Peer.name, t_timestamp)
 
                 if answer:
                     Peer.reply_count += 1
             except Exception as e:
-                continue
+                print_with_time(f"{peer_name} has expired.")
+                
+                removed_keys.append(peer_name)
+                Peer.maximum_count -= 1
+
+        for removed_key in removed_keys:
+            Peer.peer_dict.pop(removed_key)
 
         if Peer.reply_count == Peer.maximum_count:
             Peer.state = "HELD"
@@ -125,7 +136,7 @@ class Peer(object):
             print_with_time(f"State: {Peer.state}")
 
             Peer.timeout_job = scheduler.add_job(
-                Peer.exit_section, trigger="interval", seconds=10
+                Peer.exit_section, trigger="interval", seconds=Peer.monopoly_timeout_s
             )
 
 
@@ -237,7 +248,10 @@ def _init_menu(threads: list[PyThreadKiller]):
             continue
 
         if menu_entry == "Listar peers ativos":
-            print(Peer.peer_dict)
+            peer_name_list = list(Peer.peer_dict.keys())
+            peer_names = ", ".join(peer_name_list)
+            
+            print_with_time(f"[{len(peer_name_list)}]: {peer_names}")
             continue
         if menu_entry == "Listar votos atuais e necessarios":
             print(f"Votos atuais: {Peer.reply_count} - Votos necessarios: {Peer.maximum_count}")
