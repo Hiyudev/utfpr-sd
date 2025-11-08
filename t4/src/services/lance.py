@@ -78,7 +78,7 @@ def main():
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
                         body=body,
-                        routing_key="lance_invalidado"
+                        routing_key="lance_invalidado",
                     )
                     print("[MS-Lance] Lance invalidado!")
             else:
