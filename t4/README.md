@@ -23,3 +23,7 @@ Caso queira "resetar" o RabbitMQ:
 
 # Execução do projeto
 É necessário que o RabbitMQ esteja em execução.
+
+# Portas
+- `5000`: `MS Pagamento`
+- `5555`: `Sistema de pagamento externo`

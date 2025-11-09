@@ -1,0 +1,11 @@
+POST http://127.0.0.1:5555/transaction HTTP/1.1
+Content-Type: application/json
+
+{
+    "client_id": "client007",
+    "value": "123"
+}
+
+###
+
+POST http://127.0.0.1:5555/transaction/5e72963c5a2e42adb73ab8bd80bbf403 HTTP/1.1

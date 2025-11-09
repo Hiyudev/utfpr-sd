@@ -1,34 +1,156 @@
+import os
+import sys
+import requests
+from threading import Thread, Lock
+from time import sleep
 from flask import Flask, request
-import random
-import uuid
+import pika
+from pika.adapters.blocking_connection import BlockingChannel
 
-WEBHOOK_URL = ""
-ACTIVE_TRANSACTIONS: list[str] = []
+# Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+
+from common.serial import deserialize_dict, serialize_dict
 
 app = Flask(__name__)
 
-@app.route("/transaction", methods = ['POST'])
-def init_transaction():
-    if request.is_json:
-        data = request.json
-        valor = data.get('valor')
-        client_id = data.get('client_id')
-        
-        id = uuid.uuid4().hex
-        
-        ACTIVE_TRANSACTIONS.append(id)
-        
-        host_with_port = request.host
-        return f"{host_with_port}/transaction/{id}"
-    else:
-        return "Request must be JSON", 400
+# Variáveis globais
+global_exchange_name = "exchange"
+global_externo_url = "http://127.0.0.1:5555/transaction"
+global_transactions_mutex = None
+global_transactions: list[dict[str, any]] = []
 
-@app.route("/transaction/<uuid:transaction_id>")
-def pay_transaction(transaction_id: str):
-    if not transaction_id in ACTIVE_TRANSACTIONS:
-        return None
-    
-    ACTIVE_TRANSACTIONS.remove(transaction_id)
-    
-    status = random.choice([True, False])
-    valor = random.randint()
+
+@app.route("/webhook", methods=["POST"])
+def receive_webhook():
+    if request.method == "POST":
+        try:
+            data = request.json
+
+            assert "value" in data
+            assert "status" in data
+            assert "transaction_id" in data
+            assert "client_id" in data
+
+            global_transactions_mutex.acquire()
+            global_transactions.append(data)
+            global_transactions_mutex.release()
+
+            print("[MS-Pagamento] Webhook recebido.")
+
+            return "Webhook received successfully", 200
+        except Exception as e:
+            return str(e), 400
+    else:
+        return "Method Not Allowed", 405
+
+
+def main_rabbitmq_transactions(channel: BlockingChannel, channel_mutex: Lock):
+    try:
+        while True:
+            sleep(0.2)  # Dorme por 200ms
+
+            global_transactions_mutex.acquire()
+
+            if len(global_transactions) == 0:
+                global_transactions_mutex.release()
+                continue
+
+            for transaction in global_transactions:
+                print("[MS-Pagamento] Enviado uma mensagem para 'status_pagamento'.")
+
+                payload = serialize_dict(transaction)
+
+                channel_mutex.acquire()
+                channel.basic_publish(
+                    exchange=global_exchange_name,
+                    routing_key="status_pagamento",
+                    body=payload,
+                )
+                channel_mutex.release()
+
+            global_transactions.clear()
+            global_transactions_mutex.release()
+
+    except KeyboardInterrupt:
+        print("[MS-Pagamento] Exiting...")
+
+
+def main_rabbitmq_consume(channel: BlockingChannel, channel_mutex: Lock):
+    def on_message(ch, method, properties, body):
+        data = deserialize_dict(body)
+
+        assert "leilao_id" in data
+        assert "lance_vencedor" in data
+        assert "cliente_vencedor" in data
+
+        payload = {
+            "value": data["lance_vencedor"],
+            "client_id": data["cliente_vencedor"],
+        }
+
+        try:
+            response = requests.post(global_externo_url, json=payload)
+            response.raise_for_status()
+
+            print("[MS-Pagamento] Um link de pagamento foi criado.")
+        except requests.exceptions.RequestException as e:
+            print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.")
+
+    channel.basic_consume(
+        queue=queue_name, on_message_callback=on_message, auto_ack=False
+    )
+
+    print("[MS-Pagamento] Waiting for messages. To exit press CTRL+C")
+
+    try:
+        channel.start_consuming()
+    except KeyboardInterrupt:
+        print("[MS-Pagamento] Exiting...")
+
+    return 1
+
+
+def main_flask():
+    app.run(port=5000)
+    return 1
+
+
+# TODO: Arrumar o problema de duas conexões !!! Duas threads não conseguem compartilhar uma mesma conexão
+
+if __name__ == "__main__":
+    global_transactions_mutex = Lock()
+    threads: list[Thread] = []
+
+    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel = connection.channel()
+    channel.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
+
+    # Cria uma fila com nome aleatória
+    result = channel.queue_declare(queue="", exclusive=True)
+    queue_name = result.method.queue
+
+    channel.queue_bind(
+        exchange=global_exchange_name, queue=queue_name, routing_key="leilao_vencedor"
+    )
+
+    channel_mutex = Lock()
+
+    threads.append(
+        Thread(
+            target=main_rabbitmq_transactions,
+            daemon=True,
+            args=(
+                channel,
+                channel_mutex,
+            ),
+        )
+    )
+    threads.append(
+        Thread(target=main_rabbitmq_consume, daemon=True, args=(channel, channel_mutex))
+    )
+
+    for thread in threads:
+        thread.start()
+
+    main_flask()
