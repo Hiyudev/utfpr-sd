@@ -83,6 +83,8 @@ def route_leilao():
         end_datetime = datetime.datetime.fromtimestamp(float(data["end"]))
         data["start"] = start_datetime
         data["end"] = end_datetime
+        #data["start"] = datetime.datetime.now() + datetime.timedelta(seconds=1)
+        #data["end"] = datetime.datetime.now() + datetime.timedelta(seconds=15)
         data["value"] = value_float
 
         leiloes_mutex.acquire()

@@ -3,7 +3,7 @@ import sys
 import requests
 from threading import Thread, Lock
 from time import sleep
-from flask import Flask, request
+from flask import Flask, request, jsonify
 import pika
 from pika.adapters.blocking_connection import BlockingChannel
 
@@ -38,11 +38,11 @@ def receive_webhook():
 
             print("[MS-Pagamento] Webhook recebido.")
 
-            return "Webhook received successfully", 200
+            return jsonify("Webhook received successfully"), 200
         except Exception as e:
             return str(e), 400
     else:
-        return "Method Not Allowed", 405
+        return jsonify("Method Not Allowed"), 405
 
 
 def main_rabbitmq_transactions(channel: BlockingChannel, channel_mutex: Lock):
@@ -91,11 +91,15 @@ def main_rabbitmq_consume(channel: BlockingChannel, channel_mutex: Lock):
 
         try:
             response = requests.post(global_externo_url, json=payload)
-            response.raise_for_status()
+            link = response.text
+            link.replace("\n", "")
+            #response.raise_for_status()
+            print("response: ", link)
+            test = requests.post(link, json=payload)
 
             print("[MS-Pagamento] Um link de pagamento foi criado.")
         except requests.exceptions.RequestException as e:
-            print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.")
+            print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.", e)
 
     channel.basic_consume(
         queue=queue_name, on_message_callback=on_message, auto_ack=False
@@ -122,15 +126,27 @@ if __name__ == "__main__":
     global_transactions_mutex = Lock()
     threads: list[Thread] = []
 
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
-    channel = connection.channel()
-    channel.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
+    connection_transactions = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel_transactions = connection_transactions.channel()
+    channel_transactions.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
 
     # Cria uma fila com nome aleatória
-    result = channel.queue_declare(queue="", exclusive=True)
+    result_transactions = channel_transactions.queue_declare(queue="", exclusive=True)
+    queue_name_transactions = result_transactions.method.queue
+
+    channel_transactions.queue_bind(
+        exchange=global_exchange_name, queue=queue_name_transactions, routing_key="status_pagamento"
+    )
+
+    connection_consume = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    channel_consume = connection_consume.channel()
+    channel_consume.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
+
+    # Cria uma fila com nome aleatória
+    result = channel_consume.queue_declare(queue="", exclusive=True)
     queue_name = result.method.queue
 
-    channel.queue_bind(
+    channel_consume.queue_bind(
         exchange=global_exchange_name, queue=queue_name, routing_key="leilao_vencedor"
     )
 
@@ -141,13 +157,13 @@ if __name__ == "__main__":
             target=main_rabbitmq_transactions,
             daemon=True,
             args=(
-                channel,
+                channel_transactions,
                 channel_mutex,
             ),
         )
     )
     threads.append(
-        Thread(target=main_rabbitmq_consume, daemon=True, args=(channel, channel_mutex))
+        Thread(target=main_rabbitmq_consume, daemon=True, args=(channel_consume, channel_mutex))
     )
 
     for thread in threads:
