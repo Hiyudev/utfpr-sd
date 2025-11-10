@@ -101,6 +101,18 @@ def main_rabbitmq():
     channel = connection.channel()
     channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct")
 
+    result = channel.queue_declare(queue="", exclusive=True)
+    queue_name = result.method.queue
+
+    # Conecta a fila criada com o exchange, aceitando apenas mensagens com o identificador "lance_validado" e "leilao_vencedor"
+    # Requisito 5.1 - Escuta os eventos das filas lance_validado e leilao_vencedor.
+    channel.queue_bind(
+        exchange=EXCHANGE_NAME, queue=queue_name, routing_key="leilao_iniciado"
+    )
+    channel.queue_bind(
+        exchange=EXCHANGE_NAME, queue=queue_name, routing_key="leilao_finalizado"
+    )
+
     already_started: list[str] = []
     already_ended: list[str] = []
 
@@ -133,7 +145,7 @@ def main_rabbitmq():
                 already_passed_start = sorted_starts[0][1] < now
                 start_element: dict[str, any] = leiloes[sorted_starts[0][0]]
 
-                if already_passed_start:
+                if already_passed_start and start_element["id"] not in already_started:
                     message = serialize_leilao(start_element)
 
                     # Requisito 3.2 - O leilão de um determinado produto deve ser iniciado quando o tempo definido para esse leilão for atingido. Quando um leilão começa, ele publica o evento na fila: leilao_iniciado.
@@ -152,7 +164,7 @@ def main_rabbitmq():
                 already_passed_end = sorted_ends[0][1] < now
                 end_element: str = leiloes[sorted_ends[0][0]]["id"]
 
-                if already_passed_end:
+                if already_passed_end and end_element not in already_ended:
                     message = end_element.encode("utf-8")
 
                     # Requisito 3.3 - O leilão de um determinado produto deve ser finalizado quando o tempo definido para esse leilão expirar. Quando um leilão termina, ele publica o evento na fila: leilao_finalizado.
