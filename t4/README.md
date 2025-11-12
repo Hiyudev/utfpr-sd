@@ -27,7 +27,7 @@ Caso queira "resetar" o RabbitMQ/Redis:
 Em particular ao `API Gateway`, deve ser executado o seguinte comando no diretório `src`:
 `gunicorn gateway:app --worker-class gevent --bind 127.0.0.1:8888`
 
-Em particular ao `Client`, deve ser executado o seguinte comando: `npm run dev`
+Em particular ao `Client`, deve ser executado o seguinte comando no diretório `client`: `npm run dev`
 
 # Portas
 - `5000`: `MS Pagamento`
