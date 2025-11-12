@@ -91,13 +91,23 @@ def main_rabbitmq_consume(channel: BlockingChannel, channel_mutex: Lock):
 
         try:
             response = requests.post(global_externo_url, json=payload)
-            link = response.text
-            link.replace("\n", "")
-            #response.raise_for_status()
-            print("response: ", link)
-            test = requests.post(link, json=payload)
+            response.raise_for_status()
+
+            link = response.text.replace("\n", "")
 
             print("[MS-Pagamento] Um link de pagamento foi criado.")
+
+            body = data.copy()
+            body["link"] = link
+            body = serialize_dict(body)
+
+            channel.basic_publish(
+                exchange=global_exchange_name,
+                routing_key="link_pagamento",
+                body=body,
+            )
+            
+            print("[MS-Pagamento] Enviado uma mensagem para 'link_pagamento'.")
         except requests.exceptions.RequestException as e:
             print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.", e)
 
@@ -120,27 +130,35 @@ def main_flask():
     return 1
 
 
-# TODO: Arrumar o problema de duas conexões !!! Duas threads não conseguem compartilhar uma mesma conexão
-
 if __name__ == "__main__":
     global_transactions_mutex = Lock()
     threads: list[Thread] = []
 
-    connection_transactions = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    connection_transactions = pika.BlockingConnection(
+        pika.ConnectionParameters(host="localhost")
+    )
     channel_transactions = connection_transactions.channel()
-    channel_transactions.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
+    channel_transactions.exchange_declare(
+        exchange=global_exchange_name, exchange_type="direct"
+    )
 
     # Cria uma fila com nome aleatória
     result_transactions = channel_transactions.queue_declare(queue="", exclusive=True)
     queue_name_transactions = result_transactions.method.queue
 
     channel_transactions.queue_bind(
-        exchange=global_exchange_name, queue=queue_name_transactions, routing_key="status_pagamento"
+        exchange=global_exchange_name,
+        queue=queue_name_transactions,
+        routing_key="status_pagamento",
     )
 
-    connection_consume = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    connection_consume = pika.BlockingConnection(
+        pika.ConnectionParameters(host="localhost")
+    )
     channel_consume = connection_consume.channel()
-    channel_consume.exchange_declare(exchange=global_exchange_name, exchange_type="direct")
+    channel_consume.exchange_declare(
+        exchange=global_exchange_name, exchange_type="direct"
+    )
 
     # Cria uma fila com nome aleatória
     result = channel_consume.queue_declare(queue="", exclusive=True)
@@ -163,7 +181,11 @@ if __name__ == "__main__":
         )
     )
     threads.append(
-        Thread(target=main_rabbitmq_consume, daemon=True, args=(channel_consume, channel_mutex))
+        Thread(
+            target=main_rabbitmq_consume,
+            daemon=True,
+            args=(channel_consume, channel_mutex),
+        )
     )
 
     for thread in threads:
