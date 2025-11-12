@@ -8,24 +8,26 @@ Caso adicione uma nova biblioteca:
 1. `pip install <nome-da-biblioteca>` -- Instala a nova biblioteca
 2. `pip freeze > requirements.txt` -- Atualiza o arquivo de dependências
 
-# Configuração do RabbitMQ
-No projeto, é utilizado o Docker para instanciar o RabbitMQ:
+# Configuração do RabbitMQ e Redis
+No projeto, é utilizado o Docker para instanciar o RabbitMQ, e o Redis para o Flask-SSE:
 1. `docker-compose -f docker-compose.rabbitmq.yml up -d` -- Instancia o RabbitMQ
 
 Caso a execução falhe, e um problema de porta em uso esteja presente:
 1. `./scripts/fix_port_used.sh` -- Elimina os processos que estão utilizando as portas
 
-Caso queira parar o RabbitMQ:
+Caso queira parar o RabbitMQ/Redis:
 1. `docker-compose -f docker-compose.rabbitmq.yml down` -- Para o RabbitMQ
 
-Caso queira "resetar" o RabbitMQ:
-1. `docker-compose -f docker-compose.rabbitmq.yml down -v` -- Para e remove volumes do RabbitMQ, e volumes seriam os dados persistentes do RabbitMQ.
+Caso queira "resetar" o RabbitMQ/Redis:
+1. `docker-compose -f docker-compose.rabbitmq.yml down -v` -- Para e remove volumes do RabbitMQ/Redis, e volumes seriam os dados persistentes do RabbitMQ/Redis.
 
 # Execução do projeto
-É necessário que o RabbitMQ esteja em execução.
+É necessário que o RabbitMQ/Redis esteja em execução.
 
 Em particular ao `API Gateway`, deve ser executado o seguinte comando:
 `gunicorn gateway:app --worker-class gevent`
+
+Em particular ao `Client`, deve ser executado o seguinte comando: `npm run dev`
 
 # Portas
 - `5000`: `MS Pagamento`
