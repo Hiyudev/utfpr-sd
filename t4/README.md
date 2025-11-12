@@ -24,8 +24,8 @@ Caso queira "resetar" o RabbitMQ/Redis:
 # Execução do projeto
 É necessário que o RabbitMQ/Redis esteja em execução.
 
-Em particular ao `API Gateway`, deve ser executado o seguinte comando:
-`gunicorn gateway:app --worker-class gevent`
+Em particular ao `API Gateway`, deve ser executado o seguinte comando no diretório `src`:
+`gunicorn gateway:app --worker-class gevent --bind 127.0.0.1:8888`
 
 Em particular ao `Client`, deve ser executado o seguinte comando: `npm run dev`
 

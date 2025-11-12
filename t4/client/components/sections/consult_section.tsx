@@ -9,7 +9,7 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table"
-import { Leilao } from "@/lib/types";
+import { Leilao, RequestedLeilao } from "@/lib/types";
 import { calc_remaning } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
@@ -30,25 +30,7 @@ import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, For
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
-
-const default_leiloes: Leilao[] = [
-    {
-        "id": "123",
-        "name": "Guitarra",
-        "description": "Ferramenta mágica",
-        "value": 50.00,
-        "start": new Date(),
-        "end": new Date(new Date().getTime() + 1 * 60000)
-    },
-    {
-        "id": "456",
-        "name": "Violao",
-        "description": "And his music was eletric...",
-        "value": 22.00,
-        "start": new Date(),
-        "end": new Date(new Date().getTime() + 1 * 60000)
-    }
-]
+import axios from "axios";
 
 const formSchema = z.object({
     lance: z.number().min(0.01, {
@@ -57,13 +39,34 @@ const formSchema = z.object({
 })
 
 export function ConsultSection() {
-    const [leiloes, set_leiloes] = useState<Leilao[]>(default_leiloes);
+    const [leiloes, set_leiloes] = useState<Leilao[]>([]);
     const [time, set_time] = useState<Date>(new Date);
+
+    const get_leiloes = async () => {
+        const response = await axios.get("http://localhost:8888/leilao");
+
+        const leiloes: RequestedLeilao[] = response.data;
+
+        for (let i = 0; i < leiloes.length; i++) {
+            const leilao = leiloes[i];
+            set_leiloes((prev) => prev.concat({
+                "name": leilao.name,
+                "description": leilao.description,
+                "value": leilao.value,
+                "start": new Date(leilao.start * 1000),
+                "end": new Date(leilao.end * 1000),
+                "id": leilao.id
+            }))
+        }
+    }
 
     useEffect(() => {
         const interval = setInterval(() => {
             set_time(new Date());
         }, 1000);
+
+        get_leiloes();
+
         return () => {
             clearInterval(interval);
         };
@@ -105,11 +108,11 @@ export function ConsultSection() {
                         </TableRow>
                     </TableHeader>
                     <TableBody>
-                        {leiloes.map((leilao) => (
+                        {leiloes.length > 0 && leiloes.map((leilao) => (
                             <TableRow key={leilao.id}>
                                 <TableCell>{leilao.name}</TableCell>
                                 <TableCell>{leilao.description}</TableCell>
-                                <TableCell>R${leilao.value.toFixed(2).toString()}</TableCell>
+                                <TableCell>R${leilao.value.toFixed(2)}</TableCell>
                                 <TableCell>{calc_remaning(time, leilao.end)}</TableCell>
                                 <TableCell>
                                     <Dialog>

@@ -69,7 +69,7 @@ def route_leilao():
                     "id": leilao["id"],
                     "name": leilao["name"],
                     "description": leilao["description"],
-                    "value": str(leilao["value"]),
+                    "value": leilao["value"],
                     "start": str(leilao["start"].timestamp()),
                     "end": str(leilao["end"].timestamp()),
                 }
@@ -79,19 +79,19 @@ def route_leilao():
         response = jsonify(data)
         return response, 200
     elif method == "POST":
-        data = request.get_json()
+        data: dict[str, any] = request.get_json()
 
         assert "name" in data
         assert "description" in data
         assert "value" in data
         assert "start" in data
         assert "end" in data
-
+        
         assert isinstance(data["name"], str)
         assert isinstance(data["description"], str)
-        assert isinstance(data["value"], str)
-        assert isinstance(data["start"], str)
-        assert isinstance(data["end"], str)
+        assert isinstance(data["value"], float)
+        assert isinstance(data["start"], int)
+        assert isinstance(data["end"], int)
 
         value_float = float(data["value"])
         start_datetime = datetime.datetime.fromtimestamp(float(data["start"]))
@@ -106,8 +106,8 @@ def route_leilao():
 
         start_scheduler_trigger = DateTrigger(run_date=start_datetime)
         end_scheduler_trigger = DateTrigger(run_date=end_datetime)
-        scheduler.add_job(trigger_start, args=(data), trigger=start_scheduler_trigger)
-        scheduler.add_job(trigger_end, args=(data), trigger=end_scheduler_trigger)
+        scheduler.add_job(trigger_start, args=(data,), trigger=start_scheduler_trigger)
+        scheduler.add_job(trigger_end, args=(data,), trigger=end_scheduler_trigger)
 
         leiloes_mutex.release()
 
@@ -198,6 +198,9 @@ def main_flask():
 if __name__ == "__main__":
     scheduler.start()
     leiloes_mutex = Lock()
+    start_leiloes_mutex = Lock()
+    end_leiloes_mutex = Lock()
+    
     threads: list[Thread] = []
 
     threads.append(Thread(target=main_rabbitmq, daemon=True))

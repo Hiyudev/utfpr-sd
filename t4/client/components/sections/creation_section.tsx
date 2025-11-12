@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input"
 import { DateTimePicker24h } from "../ui/datetime"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { PlusIcon } from "lucide-react"
+import axios from "axios"
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -45,8 +46,19 @@ export function CreationForm() {
         },
     })
 
-    function onCreation(values: z.infer<typeof formSchema>) {
-        console.log(values)
+    async function onCreation(values: z.infer<typeof formSchema>) {
+        const body = {
+            "name": values.name,
+            "description": values.description,
+            "start": Math.floor(values.start.getTime() / 1000),
+            "end": Math.floor(values.end.getTime() / 1000),
+            "value": values.value
+        }
+
+        const response = await axios.post("http://localhost:8888/leilao", body);
+        if (response.status == 200) {
+            form.reset();
+        }
     }
 
     return (

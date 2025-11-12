@@ -1,19 +1,22 @@
-from threading import Thread
+from threading import Thread, Lock
 import uuid
 import pika
 import requests
 from flask import Flask, request, jsonify, session
 from flask_sse import sse
-
+from flask_cors import CORS
 from common.serial import deserialize_dict
 
 app = Flask(__name__)
+CORS(app)
+app.secret_key = "DUTRA"
 app.config["REDIS_URL"] = "redis://localhost"
 app.register_blueprint(sse, url_prefix="/events")
 
 global_ms_leilao_url = "http://127.0.0.1:8000/leilao"
 global_ms_lance_url = "http://127.0.0.1:8100/lance"
 global_interests: dict[str, list[str]] = {}
+global_interests_mutex: Lock = None
 EXCHANGE_NAME = "exchange"
 
 
@@ -84,20 +87,24 @@ def route_notificacoes(leilao_id: str):
 
         client_id = session["client_id"]
 
+        global_interests_mutex.acquire()
         if client_id not in global_interests:
             global_interests[client_id] = []
 
         global_interests[client_id].append(leilao_id)
+        global_interests_mutex.release()
     elif request.method == "DELETE":
         if "client_id" not in session:
             return "Bad Request", 400
 
         client_id = session["client_id"]
 
+        global_interests_mutex.acquire()
         if client_id not in global_interests:
             return "Bad Request", 400
 
         global_interests[client_id].remove(leilao_id)
+        global_interests_mutex.release()
     else:
         return "Method Not Allowed", 405
 
@@ -126,16 +133,29 @@ def main_rabbitmq():
     def on_message(ch, method, properties, body):
         data = deserialize_dict(body)
         
-        client_id = ""
+        global_interests_mutex.acquire()
+  
+        event_leilao_id = ""
+        targeted_user_id = ""
         
         if method.routing_key == "lance_validado" or method.routing_key == "lance_invalidado":
-            client_id = data["user_id"]
+            event_leilao_id = data["leilao_id"]
         elif method.routing_key == "leilao_vencedor" or method.routing_key == "link_pagamento":
-            client_id = data["cliente_vencedor"]
+            event_leilao_id = data["leilao_id"]
         elif method.routing_key == "status_pagamento":
-            client_id = data["client_id"]
+            targeted_user_id = data["client_id"]
+  
+        if len(event_leilao_id) > 0:
+            for client_id, leiloes in global_interests:
+                if event_leilao_id not in leiloes:
+                    continue
+                
+                sse.publish(data, type=f"notification_{client_id}")
         
-        sse.publish(data, type=f"notification_{client_id}")
+        if len(targeted_user_id) > 0:
+            sse.publish(data, type=f"notification_{targeted_user_id}")
+            
+        global_interests_mutex.release()
 
     channel.basic_consume(
         queue=queue_name, on_message_callback=on_message, auto_ack=False
@@ -156,7 +176,7 @@ def main_rabbitmq():
 
 
 def main_flask():
-    app.run(port=8888, threaded=False)
+    app.run(port=8888)
 
     return 1
 
