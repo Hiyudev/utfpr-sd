@@ -31,5 +31,5 @@ Em particular ao `API Gateway`, deve ser executado o seguinte comando:
 - `5000`: `MS Pagamento`
 - `5555`: `Sistema de pagamento externo`
 - `8000`: `MS Leilao`
-- `8888`: `API Gateway`
 - `8100`: `MS Lance`
+- `8888`: `API Gateway`

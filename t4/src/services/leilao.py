@@ -5,11 +5,12 @@ import sys
 import os
 from time import sleep
 from threading import Thread, Lock
-
-from faker import Faker
 from flask import Flask, jsonify, request
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.date import DateTrigger
 
 app = Flask(__name__)
+scheduler = BackgroundScheduler()
 
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
@@ -22,6 +23,22 @@ EXCHANGE_NAME = "exchange"
 ID_SUMMARY_LENGTH = 8
 leiloes: list[dict[str, any]] = []
 leiloes_mutex = None
+start_leiloes: list[dict[str, any]] = []
+start_leiloes_mutex: Lock = None
+end_leiloes: list[dict[str, any]] = []
+end_leiloes_mutex: Lock = None
+
+
+def trigger_start(payload: dict[str, any]):
+    start_leiloes_mutex.acquire()
+    start_leiloes.append(payload)
+    start_leiloes_mutex.release()
+
+
+def trigger_end(payload: dict[str, any]):
+    end_leiloes_mutex.acquire()
+    end_leiloes.append(payload)
+    end_leiloes_mutex.release()
 
 
 @app.route("/leilao", methods=["GET", "POST"])
@@ -75,19 +92,23 @@ def route_leilao():
         assert isinstance(data["value"], str)
         assert isinstance(data["start"], str)
         assert isinstance(data["end"], str)
-        
+
         value_float = float(data["value"])
         start_datetime = datetime.datetime.fromtimestamp(float(data["start"]))
         end_datetime = datetime.datetime.fromtimestamp(float(data["end"]))
         data["start"] = start_datetime
         data["end"] = end_datetime
-        #data["start"] = datetime.datetime.now() + datetime.timedelta(seconds=1)
-        #data["end"] = datetime.datetime.now() + datetime.timedelta(seconds=15)
         data["value"] = value_float
         data["id"] = str(uuid.uuid4())
 
         leiloes_mutex.acquire()
         leiloes.append(data)
+
+        start_scheduler_trigger = DateTrigger(run_date=start_datetime)
+        end_scheduler_trigger = DateTrigger(run_date=end_datetime)
+        scheduler.add_job(trigger_start, args=(data), trigger=start_scheduler_trigger)
+        scheduler.add_job(trigger_end, args=(data), trigger=end_scheduler_trigger)
+
         leiloes_mutex.release()
 
         return "", 204
@@ -114,74 +135,50 @@ def main_rabbitmq():
         exchange=EXCHANGE_NAME, queue=queue_name, routing_key="leilao_finalizado"
     )
 
-    already_started: list[str] = []
-    already_ended: list[str] = []
-
-    # TODO: REFORMULAR PARA UTILIZAR ADVANCED PYTHON SCHEDULER
-
     try:
         while True:
             sleep(0.2)  # Dorme por 200ms
 
             # Evita problemas com threads
-            leiloes_mutex.acquire()
+            start_leiloes_mutex.acquire()
+            end_leiloes_mutex.acquire()
 
-            # Elabora uma lista das datas de inicio e fim
-            starts: list[datetime.datetime] = [leilao["start"] for leilao in leiloes]
-            ends: list[datetime.datetime] = [leilao["end"] for leilao in leiloes]
-
-            sorted_starts: list[tuple[int, datetime.datetime]] = sorted(
-                enumerate(starts), key=lambda i: i[1]
-            )
-            sorted_ends: list[tuple[int, datetime.datetime]] = sorted(
-                enumerate(ends), key=lambda i: i[1]
-            )
-
-            now = datetime.datetime.now()
-
-            has_elements_in_starts = len(sorted_starts) > 0
-            has_elements_in_ends = len(sorted_ends) > 0
+            has_elements_in_starts = len(start_leiloes) > 0
+            has_elements_in_ends = len(end_leiloes) > 0
 
             if has_elements_in_starts:
-                already_passed_start = sorted_starts[0][1] < now
-                start_element: dict[str, any] = leiloes[sorted_starts[0][0]]
+                for start_leilao in start_leiloes:
+                    message = serialize_leilao(start_leilao)
 
-                if already_passed_start and start_element["id"] not in already_started:
-                    message = serialize_leilao(start_element)
-
-                    # Requisito 3.2 - O leilão de um determinado produto deve ser iniciado quando o tempo definido para esse leilão for atingido. Quando um leilão começa, ele publica o evento na fila: leilao_iniciado.
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
                         routing_key="leilao_iniciado",
                         body=message,
                     )
-                    already_started.append(start_element["id"])
 
                     print(
-                        f"[MS-Leilao] Leilao com o id {start_element['id'][:ID_SUMMARY_LENGTH]} foi iniciado."
+                        f"[MS-Leilao] Leilao com o id {start_leilao['id'][:ID_SUMMARY_LENGTH]} foi iniciado."
                     )
 
             if has_elements_in_ends:
-                already_passed_end = sorted_ends[0][1] < now
-                end_element: str = leiloes[sorted_ends[0][0]]["id"]
+                for end_leilao in end_leiloes:
+                    message = end_leilao["id"].encode("utf-8")
 
-                if already_passed_end and end_element not in already_ended:
-                    message = end_element.encode("utf-8")
-
-                    # Requisito 3.3 - O leilão de um determinado produto deve ser finalizado quando o tempo definido para esse leilão expirar. Quando um leilão termina, ele publica o evento na fila: leilao_finalizado.
                     channel.basic_publish(
                         exchange=EXCHANGE_NAME,
                         routing_key="leilao_finalizado",
                         body=message,
                     )
-                    already_ended.append(end_element)
 
                     print(
-                        f"[MS-Leilao] Leilao com o id {end_element[:ID_SUMMARY_LENGTH]} foi finalizado."
+                        f"[MS-Leilao] Leilao com o id {message[:ID_SUMMARY_LENGTH]} foi finalizado."
                     )
 
-            # Libera o lock
-            leiloes_mutex.release()
+            start_leiloes.clear()
+            end_leiloes.clear()
+
+            start_leiloes_mutex.release()
+            end_leiloes_mutex.release()
     except KeyboardInterrupt:
         print("[MS-Leilao] Exiting...")
         connection.close()
@@ -199,6 +196,7 @@ def main_flask():
 
 
 if __name__ == "__main__":
+    scheduler.start()
     leiloes_mutex = Lock()
     threads: list[Thread] = []
 
