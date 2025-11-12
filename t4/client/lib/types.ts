@@ -2,8 +2,8 @@ export interface Leilao {
     name: string;
     description: string;
     value: number;
-    start_date: Date;
-    end_date: Date;
+    start: Date;
+    end: Date;
     id?: string;
 }
 

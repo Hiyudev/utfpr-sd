@@ -17,7 +17,6 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from common.serial import deserialize_dict, deserialize_leilao, serialize_dict
 
 # Variáveis globais
-
 leiloes: list[dict[str, str | datetime.datetime]] = []
 EXCHANGE_NAME = "exchange"
 

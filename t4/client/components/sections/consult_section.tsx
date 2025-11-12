@@ -37,16 +37,16 @@ const default_leiloes: Leilao[] = [
         "name": "Guitarra",
         "description": "Ferramenta mágica",
         "value": 50.00,
-        "start_date": new Date(),
-        "end_date": new Date(new Date().getTime() + 1 * 60000)
+        "start": new Date(),
+        "end": new Date(new Date().getTime() + 1 * 60000)
     },
     {
         "id": "456",
         "name": "Violao",
         "description": "And his music was eletric...",
         "value": 22.00,
-        "start_date": new Date(),
-        "end_date": new Date(new Date().getTime() + 1 * 60000)
+        "start": new Date(),
+        "end": new Date(new Date().getTime() + 1 * 60000)
     }
 ]
 
@@ -110,7 +110,7 @@ export function ConsultSection() {
                                 <TableCell>{leilao.name}</TableCell>
                                 <TableCell>{leilao.description}</TableCell>
                                 <TableCell>R${leilao.value.toFixed(2).toString()}</TableCell>
-                                <TableCell>{calc_remaning(time, leilao.end_date)}</TableCell>
+                                <TableCell>{calc_remaning(time, leilao.end)}</TableCell>
                                 <TableCell>
                                     <Dialog>
                                         <DialogTrigger asChild>

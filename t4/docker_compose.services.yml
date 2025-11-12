@@ -15,7 +15,13 @@ services:
     volumes:
       - rabbitmq-lib:/var/lib/rabbitmq/
       - rabbitmq-log:/var/log/rabbitmq
-
+  redis:
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+  
 configs:
   rabbitmq-plugins:
     content: "[rabbitmq_management]."  
@@ -25,3 +31,4 @@ volumes:
     driver: local
   rabbitmq-log:
     driver: local
+  redis_data:

@@ -64,20 +64,18 @@ def route_leilao():
     elif method == "POST":
         data = request.get_json()
 
-        assert "id" in data
         assert "name" in data
         assert "description" in data
         assert "value" in data
         assert "start" in data
         assert "end" in data
 
-        assert isinstance(data["id"], str)
         assert isinstance(data["name"], str)
         assert isinstance(data["description"], str)
         assert isinstance(data["value"], str)
         assert isinstance(data["start"], str)
         assert isinstance(data["end"], str)
-
+        
         value_float = float(data["value"])
         start_datetime = datetime.datetime.fromtimestamp(float(data["start"]))
         end_datetime = datetime.datetime.fromtimestamp(float(data["end"]))
@@ -86,6 +84,7 @@ def route_leilao():
         #data["start"] = datetime.datetime.now() + datetime.timedelta(seconds=1)
         #data["end"] = datetime.datetime.now() + datetime.timedelta(seconds=15)
         data["value"] = value_float
+        data["id"] = str(uuid.uuid4())
 
         leiloes_mutex.acquire()
         leiloes.append(data)

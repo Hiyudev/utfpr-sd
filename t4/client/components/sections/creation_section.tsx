@@ -26,8 +26,8 @@ const formSchema = z.object({
     description: z.string().min(2, {
         error: "A descrição do produto deve ter no mínimo 2 caracteres.",
     }),
-    start_date: z.date(),
-    end_date: z.date(),
+    start: z.date(),
+    end: z.date(),
     value: z.number().min(0.01, {
         error: "O valor mínimo para um leilão é R$0.01."
     })
@@ -40,8 +40,8 @@ export function CreationForm() {
             name: "",
             description: "",
             value: 0.01,
-            start_date: new Date(),
-            end_date: new Date(),
+            start: new Date(),
+            end: new Date(),
         },
     })
 
@@ -110,7 +110,7 @@ export function CreationForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="start_date"
+                            name="start"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Quando começa</FormLabel>
@@ -126,7 +126,7 @@ export function CreationForm() {
                         />
                         <FormField
                             control={form.control}
-                            name="end_date"
+                            name="end"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Quando termina</FormLabel>
