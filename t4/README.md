@@ -10,16 +10,16 @@ Caso adicione uma nova biblioteca:
 
 # Configuração do RabbitMQ e Redis
 No projeto, é utilizado o Docker para instanciar o RabbitMQ, e o Redis para o Flask-SSE:
-1. `docker-compose -f docker-compose.rabbitmq.yml up -d` -- Instancia o RabbitMQ
+1. `docker-compose -f docker-compose.services.yml up -d` -- Instancia o RabbitMQ/Redis
 
 Caso a execução falhe, e um problema de porta em uso esteja presente:
 1. `./scripts/fix_port_used.sh` -- Elimina os processos que estão utilizando as portas
 
 Caso queira parar o RabbitMQ/Redis:
-1. `docker-compose -f docker-compose.rabbitmq.yml down` -- Para o RabbitMQ
+1. `docker-compose -f docker-compose.services.yml down` -- Para o RabbitMQ
 
 Caso queira "resetar" o RabbitMQ/Redis:
-1. `docker-compose -f docker-compose.rabbitmq.yml down -v` -- Para e remove volumes do RabbitMQ/Redis, e volumes seriam os dados persistentes do RabbitMQ/Redis.
+1. `docker-compose -f docker-compose.services.yml down -v` -- Para e remove volumes do RabbitMQ/Redis, e volumes seriam os dados persistentes do RabbitMQ/Redis.
 
 # Execução do projeto
 É necessário que o RabbitMQ/Redis esteja em execução.
