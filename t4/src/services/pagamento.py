@@ -1,3 +1,4 @@
+import functools
 import os
 import sys
 import requests
@@ -76,7 +77,9 @@ def main_rabbitmq_transactions(channel: BlockingChannel, channel_mutex: Lock):
         print("[MS-Pagamento] Exiting...")
 
 
-def main_rabbitmq_consume(channel: BlockingChannel, channel_mutex: Lock):
+def main_rabbitmq_consume(
+    connection: pika.BlockingConnection, channel: BlockingChannel, channel_mutex: Lock
+):
     def on_message(ch, method, properties, body):
         data = deserialize_dict(body)
 
@@ -106,10 +109,13 @@ def main_rabbitmq_consume(channel: BlockingChannel, channel_mutex: Lock):
                 routing_key="link_pagamento",
                 body=body,
             )
-            
+
             print("[MS-Pagamento] Enviado uma mensagem para 'link_pagamento'.")
         except requests.exceptions.RequestException as e:
             print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.", e)
+
+        cb = functools.partial(ch.basic_ack, delivery_tag=method.delivery_tag)
+        connection.add_callback_threadsafe(cb)
 
     channel.basic_consume(
         queue=queue_name, on_message_callback=on_message, auto_ack=False
@@ -135,7 +141,7 @@ if __name__ == "__main__":
     threads: list[Thread] = []
 
     connection_transactions = pika.BlockingConnection(
-        pika.ConnectionParameters(host="localhost")
+        pika.ConnectionParameters("localhost", heartbeat=0)
     )
     channel_transactions = connection_transactions.channel()
     channel_transactions.exchange_declare(
@@ -153,7 +159,7 @@ if __name__ == "__main__":
     )
 
     connection_consume = pika.BlockingConnection(
-        pika.ConnectionParameters(host="localhost")
+        pika.ConnectionParameters("localhost", heartbeat=0)
     )
     channel_consume = connection_consume.channel()
     channel_consume.exchange_declare(
@@ -184,7 +190,7 @@ if __name__ == "__main__":
         Thread(
             target=main_rabbitmq_consume,
             daemon=True,
-            args=(channel_consume, channel_mutex),
+            args=(connection_consume, channel_consume, channel_mutex),
         )
     )
 

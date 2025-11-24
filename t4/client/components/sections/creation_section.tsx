@@ -19,6 +19,7 @@ import { DateTimePicker24h } from "../ui/datetime"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../ui/card"
 import { PlusIcon } from "lucide-react"
 import axios from "axios"
+import { toast } from "sonner"
 
 const formSchema = z.object({
     name: z.string().min(2, {
@@ -53,11 +54,16 @@ export function CreationForm() {
             "start": Math.floor(values.start.getTime() / 1000),
             "end": Math.floor(values.end.getTime() / 1000),
             "value": values.value
-        }
+        };
 
         const response = await axios.post("http://localhost:8888/leilao", body);
-        if (response.status == 200) {
+        if (response.status == 201) {
             form.reset();
+            toast.success("O leilão foi criado com sucesso");
+        }
+        else
+        {
+            toast.error("Oops!");
         }
     }
 

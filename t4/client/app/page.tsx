@@ -1,7 +1,6 @@
 'use client'
 
-import * as React from "react"
-
+import dynamic from 'next/dynamic';
 import {
   Tabs,
   TabsContent,
@@ -11,7 +10,6 @@ import {
 import {
   Table,
   TableBody,
-  TableCaption,
   TableCell,
   TableHead,
   TableHeader,
@@ -22,6 +20,9 @@ import { CreationForm } from "@/components/sections/creation_section"
 import { useState, useEffect } from 'react';
 import { Message } from "@/lib/types"
 import axios from 'axios';
+const ReactJsonView = dynamic(() => import('@microlink/react-json-view'), {
+  ssr: false,
+});
 
 export default function Home() {
   const [client_id, set_client_id] = useState<string>("");
@@ -38,6 +39,13 @@ export default function Home() {
 
   useEffect(() => {
     fetch_client_identification();
+  }, []);
+
+  useEffect(() => {
+    if (client_id.length == 0)
+    {
+      return;
+    }
 
     // Create an EventSource to listen to SSE events
     const eventSource = new EventSource('http://localhost:8888/events');
@@ -47,6 +55,10 @@ export default function Home() {
       const data = JSON.parse(e.data) as Message;
       set_messages((prev) => prev.concat(data));
     })
+
+    eventSource.onopen = () => {
+        console.log("EventSource connection opened.");
+    };
 
     eventSource.onmessage = (m) => {
       console.log(m.data)
@@ -61,7 +73,7 @@ export default function Home() {
     return () => {
       eventSource.close();
     };
-  }, []);
+  }, [client_id])
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-zinc-50 font-sans dark:bg-black">
@@ -82,7 +94,7 @@ export default function Home() {
               <CreationForm />
             </TabsContent>
             <TabsContent value="consultar">
-              <ConsultSection />
+              <ConsultSection client_id={client_id} />
             </TabsContent>
           </Tabs>
         </div>
@@ -101,12 +113,13 @@ export default function Home() {
               <TableBody>
                 {messages.map((message, index) => {
                   const { event_name, ...data } = message;
-                  const data_string = JSON.stringify(data);
 
                   return (
                     <TableRow key={index}>
                       <TableCell>{event_name}</TableCell>
-                      <TableCell>{data_string}</TableCell>
+                      <TableCell>
+                        <ReactJsonView src={data} theme={"twilight"}/>
+                      </TableCell>
                     </TableRow>
                   )
                 })}

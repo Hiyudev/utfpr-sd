@@ -86,7 +86,7 @@ def route_leilao():
         assert "value" in data
         assert "start" in data
         assert "end" in data
-        
+
         assert isinstance(data["name"], str)
         assert isinstance(data["description"], str)
         assert isinstance(data["value"], float)
@@ -104,14 +104,25 @@ def route_leilao():
         leiloes_mutex.acquire()
         leiloes.append(data)
 
-        start_scheduler_trigger = DateTrigger(run_date=start_datetime)
-        end_scheduler_trigger = DateTrigger(run_date=end_datetime)
-        scheduler.add_job(trigger_start, args=(data,), trigger=start_scheduler_trigger)
-        scheduler.add_job(trigger_end, args=(data,), trigger=end_scheduler_trigger)
+        now = datetime.datetime.now()
+
+        if now < start_datetime:
+            start_scheduler_trigger = DateTrigger(run_date=start_datetime)
+            scheduler.add_job(
+                trigger_start, args=(data,), trigger=start_scheduler_trigger
+            )
+        else:
+            trigger_start(data)
+
+        if now < end_datetime:
+            end_scheduler_trigger = DateTrigger(run_date=end_datetime)
+            scheduler.add_job(trigger_end, args=(data,), trigger=end_scheduler_trigger)
+        else:
+            trigger_end(data)
 
         leiloes_mutex.release()
 
-        return "", 204
+        return "", 201
 
     return jsonify("Comando inválido."), 400
 
@@ -119,7 +130,9 @@ def route_leilao():
 def main_rabbitmq():
     # Requisito 3.1 - Mantém internamente uma lista pré-configurada (hardcoded) de leilões com: ID do leilão, descrição, data e hora de início e fim, status (ativo, encerrado).
     # Realiza a conexao com o RabbitMQ
-    connection = pika.BlockingConnection(pika.ConnectionParameters(host="localhost"))
+    connection = pika.BlockingConnection(
+        pika.ConnectionParameters("localhost", heartbeat=0)
+    )
     channel = connection.channel()
     channel.exchange_declare(exchange=EXCHANGE_NAME, exchange_type="direct")
 
@@ -190,7 +203,7 @@ def main_rabbitmq():
 
 
 def main_flask():
-    app.run(port=8000)
+    app.run(port=8111)
 
     return 1
 
@@ -200,7 +213,7 @@ if __name__ == "__main__":
     leiloes_mutex = Lock()
     start_leiloes_mutex = Lock()
     end_leiloes_mutex = Lock()
-    
+
     threads: list[Thread] = []
 
     threads.append(Thread(target=main_rabbitmq, daemon=True))

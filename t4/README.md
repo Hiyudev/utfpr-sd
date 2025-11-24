@@ -32,6 +32,6 @@ Em particular ao `Client`, deve ser executado o seguinte comando no diretório `
 # Portas
 - `5000`: `MS Pagamento`
 - `5555`: `Sistema de pagamento externo`
-- `8000`: `MS Leilao`
+- `8111`: `MS Leilao`
 - `8100`: `MS Lance`
 - `8888`: `API Gateway`

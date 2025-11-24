@@ -13,7 +13,7 @@ import { Leilao, RequestedLeilao } from "@/lib/types";
 import { calc_remaning } from "@/lib/utils";
 import { useEffect, useState } from "react";
 import { Button } from "../ui/button";
-import { BellOffIcon, SendIcon } from "lucide-react";
+import { BellIcon, BellOffIcon, SendIcon } from "lucide-react";
 import {
     Dialog,
     DialogClose,
@@ -31,6 +31,7 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { z } from "zod"
 import axios from "axios";
+import { toast } from "sonner"
 
 const formSchema = z.object({
     lance: z.number().min(0.01, {
@@ -38,7 +39,11 @@ const formSchema = z.object({
     })
 })
 
-export function ConsultSection() {
+interface ConsultSectionInterface {
+    client_id: string;
+}
+
+export function ConsultSection({ client_id }: ConsultSectionInterface) {
     const [leiloes, set_leiloes] = useState<Leilao[]>([]);
     const [time, set_time] = useState<Date>(new Date);
 
@@ -46,18 +51,22 @@ export function ConsultSection() {
         const response = await axios.get("http://localhost:8888/leilao");
 
         const leiloes: RequestedLeilao[] = response.data;
+        let data = []
 
         for (let i = 0; i < leiloes.length; i++) {
             const leilao = leiloes[i];
-            set_leiloes((prev) => prev.concat({
+
+            data.push({
                 "name": leilao.name,
                 "description": leilao.description,
                 "value": leilao.value,
                 "start": new Date(leilao.start * 1000),
                 "end": new Date(leilao.end * 1000),
                 "id": leilao.id
-            }))
+            })
         }
+
+        set_leiloes(data);
     }
 
     useEffect(() => {
@@ -79,12 +88,55 @@ export function ConsultSection() {
         },
     })
 
-    function onLance(values: z.infer<typeof formSchema>) {
-        console.log(values)
+    async function onLance(values: z.infer<typeof formSchema>, ref_leilao: Leilao) {
+        const response = await axios.post("http://localhost:8888/lance", {
+            "leilao_id": ref_leilao.id,
+            "user_id": client_id,
+            "value": values.lance
+        });
+
+        if (response.status == 201)
+        {
+            toast.success("Lance realizado!");
+        }
+        else
+        {
+            toast.error("Oops!");
+        }
     }
 
-    function onCancelNotification() {
-        // ...
+    async function onPermitNotification(ref_leilao: Leilao) {
+        const response = await axios.post(`http://localhost:8888/notificacoes/${ref_leilao.id}`, {}, {
+            headers: {
+                "Authorization": client_id
+            }
+        });
+
+        if (response.status == 200)
+        {
+            toast.success(`Você indicou interesse ao leilão ${ref_leilao.name}`);
+        }
+        else
+        {
+            toast.error(`Oops!`);
+        }
+    }
+
+    async function onCancelNotification(ref_leilao: Leilao) {
+        const response = await axios.delete(`http://localhost:8888/notificacoes/${ref_leilao.id}`, {
+            headers: {
+                "Authorization": client_id
+            }
+        });
+
+        if (response.status == 200)
+        {
+            toast.success(`Você cancelou interesse ao leilão ${ref_leilao.name}`);
+        }
+        else
+        {
+            toast.error(`Oops!`);
+        }
     }
 
     return (
@@ -103,6 +155,7 @@ export function ConsultSection() {
                             <TableHead>Descrição</TableHead>
                             <TableHead>Valor</TableHead>
                             <TableHead>Tempo restante</TableHead>
+                            <TableHead></TableHead>
                             <TableHead></TableHead>
                             <TableHead></TableHead>
                         </TableRow>
@@ -130,7 +183,7 @@ export function ConsultSection() {
                                             </DialogHeader>
 
                                             <Form {...form}>
-                                                <form onSubmit={form.handleSubmit(onLance)} className="space-y-8">
+                                                <form onSubmit={form.handleSubmit(async (data) => await onLance(data, leilao))} className="space-y-8">
                                                     <FormField
                                                         control={form.control}
                                                         name="lance"
@@ -166,7 +219,12 @@ export function ConsultSection() {
                                     </Dialog>
                                 </TableCell>
                                 <TableCell>
-                                    <Button size="icon" variant={"outline"} onClick={onCancelNotification}>
+                                    <Button size="icon" variant={"outline"} onClick={(e) => onPermitNotification(leilao)}>
+                                        <BellIcon />
+                                    </Button>
+                                </TableCell>
+                                <TableCell>
+                                    <Button size="icon" variant={"outline"} onClick={(e) => onCancelNotification(leilao)}>
                                         <BellOffIcon />
                                     </Button>
                                 </TableCell>
