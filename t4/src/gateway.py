@@ -31,6 +31,12 @@ def index():
     return str(uuid.uuid4()), 200
 
 
+@app.route("/handshake", methods=["GET"])
+def route_handshake():
+    sse.publish("Hello World!", type="handshake")
+    return "", 200
+
+
 @app.route("/leilao", methods=["GET", "POST"])
 def route_leilao():
     # Requisito 3.1.2
@@ -70,7 +76,7 @@ def route_lance():
             body = request.get_json()
 
             assert "leilao_id" in body
-            assert "user_id" in body
+            assert "client_id" in body
             assert "value" in body
 
             response = requests.post(global_ms_lance_url, json=body)
@@ -149,27 +155,29 @@ def main_rabbitmq():
         global_interests_mutex.acquire()
 
         event_leilao_id = ""
-        targeted_user_id = ""
-
+        targeted_client_id = ""
+        
         if (
             method.routing_key == "lance_validado"
-            or method.routing_key == "lance_invalidado"
+            or method.routing_key == "leilao_vencedor"
         ):
             event_leilao_id = data["leilao_id"]
         elif (
-            method.routing_key == "leilao_vencedor"
-            or method.routing_key == "link_pagamento"
+            method.routing_key == "status_pagamento"
+            or method.routing_key == "lance_invalidado"
         ):
-            event_leilao_id = data["leilao_id"]
-        elif method.routing_key == "status_pagamento":
-            targeted_user_id = data["client_id"]
+            targeted_client_id = data["client_id"]
+        elif (
+            method.routing_key == "link_pagamento"
+        ):
+            targeted_client_id = data["cliente_vencedor"]
 
         if len(event_leilao_id) > 0:
             for client_id, leiloes in global_interests.items():
                 if event_leilao_id not in leiloes:
                     continue
 
-                print("[API-Gateway] Enviado um evento SSE")
+                print("[API-Gateway] Enviado um evento SSE pelo leilão")
 
                 with app.app_context():
                     print(f"notification_{client_id}")
@@ -177,14 +185,14 @@ def main_rabbitmq():
                     payload["event_name"] = method.routing_key
                     sse.publish(payload, type=f"notification_{client_id}")
 
-        if len(targeted_user_id) > 0:
-            print("[API-Gateway] Enviado um evento SSE")
+        if len(targeted_client_id) > 0:
+            print("[API-Gateway] Enviado um evento SSE pelo usuário")
 
             with app.app_context():
-                print(f"notification_{targeted_user_id}")
+                print(f"notification_{targeted_client_id}")
                 payload = data.copy()
                 payload["event_name"] = method.routing_key
-                sse.publish(payload, type=f"notification_{targeted_user_id}")
+                sse.publish(payload, type=f"notification_{targeted_client_id}")
 
         global_interests_mutex.release()
 

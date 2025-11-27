@@ -37,6 +37,18 @@ export default function Home() {
     set_client_id(new_client_id);
   }
 
+  async function check_health(eventSource: EventSource) {
+    await axios.get('http://localhost:8888/handshake');
+
+    if (eventSource.readyState === EventSource.OPEN) {
+      console.log("EventSource connection is open.");
+    } else if (eventSource.readyState === EventSource.CONNECTING) {
+      console.log("EventSource is attempting to connect or reconnect.");
+    } else if (eventSource.readyState === EventSource.CLOSED) {
+      console.log("EventSource connection is closed.");
+    }
+  }
+
   useEffect(() => {
     fetch_client_identification();
   }, []);
@@ -49,6 +61,11 @@ export default function Home() {
 
     // Create an EventSource to listen to SSE events
     const eventSource = new EventSource('http://localhost:8888/events');
+
+    // Handle handshake
+    eventSource.addEventListener(`handshake`, (e) => {
+      console.log(e);
+    })
 
     // Handle incoming messages
     eventSource.addEventListener(`notification_${client_id}`, (e) => {
@@ -69,8 +86,14 @@ export default function Home() {
       eventSource.close();
     };
 
+    const heartbeat = setInterval(() => {
+      check_health(eventSource);
+    }, 1000);
+
     // Cleanup on unmount
     return () => {
+      clearInterval(heartbeat);
+
       eventSource.close();
     };
   }, [client_id])

@@ -60,7 +60,7 @@ def route_lance():
                     if lance["leilao_id"] in d["id"]
                 ]
                 [
-                    d.update(winner=lance["user_id"])
+                    d.update(winner=lance["client_id"])
                     for d in leiloes
                     if lance["leilao_id"] in d["id"]
                 ]

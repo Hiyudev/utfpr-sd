@@ -91,7 +91,7 @@ export function ConsultSection({ client_id }: ConsultSectionInterface) {
     async function onLance(values: z.infer<typeof formSchema>, ref_leilao: Leilao) {
         const response = await axios.post("http://localhost:8888/lance", {
             "leilao_id": ref_leilao.id,
-            "user_id": client_id,
+            "client_id": client_id,
             "value": values.lance
         });
 
