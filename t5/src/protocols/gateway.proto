@@ -1,0 +1,53 @@
+service Gateway {
+    rpc OnLanceValidado(OnLanceValidadoRequest) returns (OnLanceValidadoResponse) {}
+    rpc OnLanceInvalidado(OnLanceInvalidadoRequest) returns (OnLanceInvalidadoResponse) {}
+    rpc OnLeilaoVencedor(OnLeilaoVencedorRequest) returns (OnLeilaoVencedorResponse) {}
+    rpc OnLinkPagamento(OnLinkPagamentoRequest) returns (OnLinkPagamentoResponse) {}
+    rpc OnStatusPagamento(OnStatusPagamentoRequest) returns (OnStatusPagamentoResponse) {}
+}
+
+message OnLanceValidadoRequest {
+
+}
+
+message OnLanceValidadoResponse {
+    
+}
+
+message OnLanceInvalidadoRequest {
+
+}
+
+message OnLanceInvalidadoResponse {
+
+}
+
+message OnLeilaoVencedorRequest {
+
+}
+
+message OnLeilaoVencedorResponse {
+
+}
+
+message OnLinkPagamentoRequest {
+    string leilao_id = 1;
+    string lance_vencedor = 2;
+    string cliente_vencedor = 3;
+    string link = 4;
+}
+
+message OnLinkPagamentoResponse {
+
+}
+
+message OnStatusPagamentoRequest {
+    string value = 1;
+    string status = 2;
+    string transaction_id = 3;
+    string client_id = 4;
+}
+
+message OnStatusPagamentoResponse {
+
+}

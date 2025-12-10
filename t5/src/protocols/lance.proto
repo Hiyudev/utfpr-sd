@@ -1,0 +1,39 @@
+edition = "2023";
+
+service Lance {
+    rpc Lance(LanceRequest) returns (LanceResponse) {}
+    rpc OnInitLeilao(OnInitLeilaoRequest) returns (OnInitLeilaoResponse) {}
+    rpc OnEndLeilao(OnEndLeilaoRequest) returns (OnEndLeilaoResponse) {}
+}
+
+message LanceRequest {
+    string leilao_id = 1;
+    string client_id = 2;
+    string value = 3;
+}
+
+message LanceResponse {
+    bool ok = 1;
+    optional string message = 2;
+}
+
+message OnInitLeilaoRequest {
+    string id = 1;
+    string description = 2;
+    float start = 3;
+    float end = 4;
+}
+
+message OnInitLeilaoResponse {
+    bool ok = 1;
+    optional string message = 2;
+}
+
+message OnEndLeilaoRequest {
+    string id = 1;
+}
+
+message OnEndLeilaoResponse {
+    bool ok = 1;
+    optional string message = 2;
+}

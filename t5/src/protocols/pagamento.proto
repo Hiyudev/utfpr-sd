@@ -1,0 +1,16 @@
+edition = "2023";
+
+service Pagamento {
+    rpc OnWinner (OnWinnerRequest) returns (OnWinnerResponse);
+}
+
+message OnWinnerRequest {
+    string leilao_id = 1;
+    string lance_vencedor = 2;
+    string cliente_vencedor = 3;
+}
+
+message OnWinnerResponse {
+    bool ok = 1;
+    optional string message = 2;
+}

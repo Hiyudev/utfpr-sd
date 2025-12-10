@@ -1,0 +1,9 @@
+service Leilao {
+    rpc GetLeiloes(GetLeiloesRequest) returns (GetLeiloesResponse) {}
+    rpc CreateLeilao(CreateLeilaoRequest) returns (CreateLeilaoResponse) {}
+}
+
+message GetLeiloesRequest {}
+message GetLeiloesResponse {}
+message CreateLeilaoRequest {}
+message CreateLeilaoResponse {}
