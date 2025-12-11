@@ -1,20 +1,20 @@
 edition = "2023";
 
 service Lance {
-    rpc Lance(LanceRequest) returns (LanceResponse) {}
+    rpc OnLance(OnLanceRequest) returns (OnLanceResponse) {}
     rpc OnInitLeilao(OnInitLeilaoRequest) returns (OnInitLeilaoResponse) {}
     rpc OnEndLeilao(OnEndLeilaoRequest) returns (OnEndLeilaoResponse) {}
 }
 
-message LanceRequest {
+message OnLanceRequest {
     string leilao_id = 1;
     string client_id = 2;
     string value = 3;
 }
 
-message LanceResponse {
+message OnLanceResponse {
     bool ok = 1;
-    optional string message = 2;
+    string message = 2;
 }
 
 message OnInitLeilaoRequest {
@@ -26,7 +26,7 @@ message OnInitLeilaoRequest {
 
 message OnInitLeilaoResponse {
     bool ok = 1;
-    optional string message = 2;
+    string message = 2;
 }
 
 message OnEndLeilaoRequest {
@@ -35,5 +35,7 @@ message OnEndLeilaoRequest {
 
 message OnEndLeilaoResponse {
     bool ok = 1;
-    optional string message = 2;
+    string leilao_id = 2;
+    string cliente_vencedor = 3;
+    string lance_vencedor = 4;
 }

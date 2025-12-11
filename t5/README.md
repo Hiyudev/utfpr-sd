@@ -35,3 +35,14 @@ Em particular ao `Client`, deve ser executado o seguinte comando no diretório `
 - `8111`: `MS Leilao`
 - `8100`: `MS Lance`
 - `8888`: `API Gateway`
+
+
+# Gerando gRPC
+
+dentro da pasta `src`, rodar:
+
+`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/lance.proto`
+
+`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/leilao.proto`
+
+TODO: gateway e pagamento

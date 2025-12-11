@@ -1,9 +1,27 @@
+edition = "2023";
+
 service Leilao {
-    rpc GetLeiloes(GetLeiloesRequest) returns (GetLeiloesResponse) {}
+    rpc GetLeiloes(GetLeiloesRequest) returns (stream GetLeiloesResponse) {}
     rpc CreateLeilao(CreateLeilaoRequest) returns (CreateLeilaoResponse) {}
 }
 
-message GetLeiloesRequest {}
-message GetLeiloesResponse {}
-message CreateLeilaoRequest {}
-message CreateLeilaoResponse {}
+message Leilao_instance {
+    string id = 1;
+    string name = 2;
+    string description = 3;
+    string value = 4;
+    string start = 5;
+    string end = 6;
+}
+message GetLeiloesRequest {
+    string empty = 1;
+}
+message GetLeiloesResponse {
+    Leilao_instance leilao = 1;
+}
+message CreateLeilaoRequest {
+    Leilao_instance leilao = 1;
+}
+message CreateLeilaoResponse {
+    bool ok = 1;
+}
