@@ -96,8 +96,10 @@ class LanceServicer(LanceServicer):
                 #print("[MS-Lance] Lance validado!")
 
                 #TODO: chamar stub de gateway OnLanceValidado
-
-                response_stub = gatewayStub.OnLanceInvalidado()
+                request = OnLanceValidadoRequest(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
+                
+                response_stub: OnLanceValidadoResponse = gatewayStub.OnLanceValidado(request)
+                print(response_stub.message)
                 return OnLanceResponse(ok=True, message="Lance Validado!")
             else:
                 #message = serialize_dict(body)
@@ -109,6 +111,9 @@ class LanceServicer(LanceServicer):
                 #print("[MS-Lance] Lance invalidado!")
 
                 #TODO: chamar stub de gateway OnLanceInvalidado
+                #request = OnLanceInvalidadoRequest(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
+                response_stub: OnLanceInvalidadoResponse = gatewayStub.OnLanceInvalidado(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
+                print(response_stub.message)
                 return OnLanceResponse(ok=False, message="Lance invalidado!")
         else:
             print("[MS-Lance] leilao nao existe!")
@@ -173,6 +178,13 @@ class LanceServicer(LanceServicer):
             #TODO: chamar stub de gateway OnLeilaoVencedor
             #TODO: chamar stub de pagamento OnWinner
             print("[MS-Lance] Leilao finalizado!")
+            response_pagamento: OnWinnerResponse = pagamentoStub.OnWinner(leilao_id=request.id, cliente_vencedor=cliente_vencedor, lance_vencedor=lance_vencedor)
+            
+            print(response_pagamento.message)
+            
+            response_gateway: OnLeilaoVencedorResponse = gatewayStub.OnLeilaoVencedor(lance_vencedor=lance_vencedor, cliente_vencedor=cliente_vencedor, leilao_id=leilao_id)
+            
+            print(response_gateway.message)
 
             return OnEndLeilaoResponse(ok=True, leilao_id = leilao_id, cliente_vencedor = cliente_vencedor, lance_vencedor = lance_vencedor)
 
@@ -181,7 +193,7 @@ class LanceServicer(LanceServicer):
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     add_LanceServicer_to_server(LanceServicer(), server)
     server.add_insecure_port("[::]:50051")
     server.start()

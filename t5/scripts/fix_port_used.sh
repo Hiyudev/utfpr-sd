@@ -1,7 +1,7 @@
 #!/bin/bash
 # Script elaborado para eliminar todos os processos que estejam utilizando as portas definidas pela variável "PORTS".
 # O objetivo deste script é contornar o problema do Docker, onde os containeres não são desligados/eliminados corretamente
-PORTS=(15672 5672 6379)
+PORTS=(50054)
 
 for PORT in "${PORTS[@]}"; do
     echo "Checking port $PORT..."

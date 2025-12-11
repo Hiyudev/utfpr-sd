@@ -83,6 +83,9 @@ class PagamentoServicer(PagamentoServicer):
             #body = serialize_dict(body)
 
             # TODO: Chamar stub de gateway e enviar o link para la com OnLinkPagamento
+            gateway_response: OnLinkPagamentoResponse = gatewayStub.OnLinkPagamento(leilao_id=body["leilao_id"], lance_vencedor=body["lance_vencedor"], cliente_vencedor=body["cliente_vencedor"], link=body["link"])
+                
+            print(gateway_response.message)
 
             print("[MS-Pagamento] Enviado link de pagamento.")
             return OnWinnerResponse(ok= True, message= "[MS-Pagamento] Enviado link de pagamento.")
@@ -92,7 +95,7 @@ class PagamentoServicer(PagamentoServicer):
         
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     add_PagamentoServicer_to_server(PagamentoServicer(), server)
     server.add_insecure_port("[::]:50053")
     server.start()
@@ -113,6 +116,10 @@ def serve():
                 payload = serialize_dict(transaction)
 
                 #TODO: chamar stub de gateway e enviar mensagem com OnStatusPagamento
+                
+                gateway_response: OnStatusPagamentoResponse = gatewayStub.OnStatusPagamento(value=transaction["value"], status=transaction["status"], transaction_id=transaction["transaction_id"], client_id=transaction["client_id"])
+                
+                print(gateway_response.message)
 
                 #channel_mutex.acquire()
                 #channel.basic_publish(
@@ -129,10 +136,17 @@ def serve():
         print("[MS-Pagamento] Exiting...")
     #server.wait_for_termination()
 
+def main_flask():
+    app.run(port=5000)
 
 if __name__ == "__main__":
     global_transactions_mutex = Lock()
-    serve()
+    
+    threads: list[Thread] = []
+    threads.append(Thread(target=serve, daemon=True))
 
+    for thread in threads:
+        thread.start()
 
+    main_flask()
 

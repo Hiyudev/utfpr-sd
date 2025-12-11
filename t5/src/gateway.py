@@ -266,13 +266,31 @@ class GatewayServicer(GatewayServicer):
 
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     add_GatewayServicer_to_server(GatewayServicer(), server)
     server.add_insecure_port("[::]:50054")
+    
+    # GRPC CONFLITANDO COM GUNICORN
     server.start()
     print("starting gateway server...")
     server.wait_for_termination()
 
 if __name__ == "gateway":
     global_interests_mutex = Lock()
-    serve()
+    
+    threads: list[Thread] = []
+    threads.append(Thread(target=serve, daemon=True))
+
+    for thread in threads:
+        thread.start()
+
+if __name__ == "__main__":
+    global_interests_mutex = Lock()
+    
+    threads: list[Thread] = []
+    threads.append(Thread(target=serve, daemon=True))
+
+    for thread in threads:
+        thread.start()
+        
+    thread.join()

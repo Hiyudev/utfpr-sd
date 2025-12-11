@@ -80,7 +80,6 @@ class LeilaoServicer(LeilaoServicer):
 
     
     def CreateLeilao(self, request: CreateLeilaoRequest, _):
-
         data: dict[str, any]
         value_float = float(request.value)
         start_datetime = datetime.datetime.fromtimestamp(float(request.start))
@@ -117,7 +116,7 @@ class LeilaoServicer(LeilaoServicer):
     
 
 def serve():
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+    server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     add_LeilaoServicer_to_server(LeilaoServicer(), server)
     server.add_insecure_port("[::]:50052")
     server.start()
@@ -134,17 +133,6 @@ def serve():
 
             has_elements_in_starts = len(start_leiloes) > 0
             has_elements_in_ends = len(end_leiloes) > 0
-
-            test = OnInitLeilaoRequest()
-            test.id = "test"
-            test.description = "test"
-            test.start = 0
-            test.end = 0
-
-
-            message_test = OnInitLeilaoRequest(id=test.id, description=test.description, start=test.start, end=test.end)
-            response_test: OnInitLeilaoResponse = lanceStub.OnInitLeilao(message_test)
-            print(response_test.message)
 
             if has_elements_in_starts:
                 for start_leilao in start_leiloes:
