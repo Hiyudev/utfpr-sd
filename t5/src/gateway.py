@@ -273,6 +273,6 @@ def serve():
     print("starting gateway server...")
     server.wait_for_termination()
 
-if __name__ == "__main__":
+if __name__ == "gateway":
     global_interests_mutex = Lock()
     serve()
