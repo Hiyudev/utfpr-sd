@@ -1,3 +1,5 @@
+edition = "2023";
+
 service Gateway {
     rpc OnLanceValidado(OnLanceValidadoRequest) returns (OnLanceValidadoResponse) {}
     rpc OnLanceInvalidado(OnLanceInvalidadoRequest) returns (OnLanceInvalidadoResponse) {}
@@ -7,27 +9,36 @@ service Gateway {
 }
 
 message OnLanceValidadoRequest {
-
+    string leilao_id = 1;
+    string client_id = 2;
+    string value = 3;
 }
 
 message OnLanceValidadoResponse {
-    
+    bool ok = 1;
+    string message = 2;
 }
 
 message OnLanceInvalidadoRequest {
-
+    string leilao_id = 1;
+    string client_id = 2;
+    string value = 3;
 }
 
 message OnLanceInvalidadoResponse {
-
+    bool ok = 1;
+    string message = 2;
 }
 
 message OnLeilaoVencedorRequest {
-
+    string leilao_id = 1;
+    string lance_vencedor = 2;
+    string cliente_vencedor = 3;
 }
 
 message OnLeilaoVencedorResponse {
-
+    bool ok = 1;
+    string message = 2;
 }
 
 message OnLinkPagamentoRequest {
@@ -38,7 +49,8 @@ message OnLinkPagamentoRequest {
 }
 
 message OnLinkPagamentoResponse {
-
+    bool ok = 1;
+    string message = 2;
 }
 
 message OnStatusPagamentoRequest {
@@ -49,5 +61,7 @@ message OnStatusPagamentoRequest {
 }
 
 message OnStatusPagamentoResponse {
+    bool ok = 1;
+    string message = 2;
 
 }

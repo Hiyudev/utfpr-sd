@@ -10,6 +10,18 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 from protocols.lance_pb2 import OnLanceRequest, OnLanceResponse, OnInitLeilaoRequest, OnInitLeilaoResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
 from protocols.lance_pb2_grpc import LanceServicer, add_LanceServicer_to_server
 
+from protocols.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
+from protocols.pagamento_pb2_grpc import PagamentoStub
+
+from protocols.gateway_pb2 import OnLanceInvalidadoRequest, OnLanceInvalidadoResponse, OnLanceValidadoRequest, OnLanceValidadoResponse, OnLeilaoVencedorRequest, OnLeilaoVencedorResponse
+from protocols.gateway_pb2_grpc import GatewayStub
+
+channel = grpc.insecure_channel('localhost:50053')
+pagamentoStub = PagamentoStub(channel)
+
+channel = grpc.insecure_channel('localhost:50054')
+gatewayStub = GatewayStub(channel)
+
 
 # service Lance {
 #    rpc Lance(LanceRequest) returns (LanceResponse) {}
@@ -57,23 +69,23 @@ class LanceServicer(LanceServicer):
         # ...
         lance = request
         # checa se id do leilao existe em leiloes
-        if any(lance["leilao_id"] in d["id"] for d in leiloes):
+        if any(lance.leilao_id in d["id"] for d in leiloes):
             print("[MS-Lance] leilao existe!")
             # checa se eh maior lance
             lance_vencedor = [
-                d.get("highest_bid") for d in leiloes if lance["leilao_id"] in d["id"]
+                d.get("highest_bid") for d in leiloes if lance.leilao_id in d["id"]
             ]
-            if float(lance["value"]) > float(lance_vencedor[0]):
+            if float(lance.value) > float(lance_vencedor[0]):
                 # Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
                 [
-                    d.update(highest_bid=lance["value"])
+                    d.update(highest_bid=lance.value)
                     for d in leiloes
-                    if lance["leilao_id"] in d["id"]
+                    if lance.leilao_id in d["id"]
                 ]
                 [
-                    d.update(winner=lance["client_id"])
+                    d.update(winner=lance.client_id)
                     for d in leiloes
-                    if lance["leilao_id"] in d["id"]
+                    if lance.leilao_id in d["id"]
                 ]
                 #message = serialize_dict(body)
                 #channel_flask.basic_publish(
@@ -84,6 +96,8 @@ class LanceServicer(LanceServicer):
                 #print("[MS-Lance] Lance validado!")
 
                 #TODO: chamar stub de gateway OnLanceValidado
+
+                response_stub = gatewayStub.OnLanceInvalidado()
                 return OnLanceResponse(ok=True, message="Lance Validado!")
             else:
                 #message = serialize_dict(body)
@@ -157,6 +171,7 @@ class LanceServicer(LanceServicer):
             #)
 
             #TODO: chamar stub de gateway OnLeilaoVencedor
+            #TODO: chamar stub de pagamento OnWinner
             print("[MS-Lance] Leilao finalizado!")
 
             return OnEndLeilaoResponse(ok=True, leilao_id = leilao_id, cliente_vencedor = cliente_vencedor, lance_vencedor = lance_vencedor)

@@ -16,6 +16,12 @@ from common.serial import deserialize_dict, serialize_dict
 from protocols.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
 from protocols.pagamento_pb2_grpc import PagamentoServicer, add_PagamentoServicer_to_server
 
+from protocols.gateway_pb2 import OnLinkPagamentoRequest, OnLinkPagamentoResponse, OnStatusPagamentoRequest, OnStatusPagamentoResponse
+from protocols.gateway_pb2_grpc import GatewayStub
+
+channel = grpc.insecure_channel('localhost:50054')
+gatewayStub = GatewayStub(channel)
+
 app = Flask(__name__)
 
 # Variáveis globais
@@ -88,7 +94,7 @@ class PagamentoServicer(PagamentoServicer):
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
     add_PagamentoServicer_to_server(PagamentoServicer(), server)
-    server.add_insecure_port("[::]:50052")
+    server.add_insecure_port("[::]:50053")
     server.start()
     print("starting pagamento server...")
     try:
