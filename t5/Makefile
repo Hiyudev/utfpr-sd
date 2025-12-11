@@ -13,6 +13,9 @@ pa:
 api:
 	gunicorn gateway:app --worker-class gevent --bind 127.0.0.1:8888 --chdir src
 
+debug-api: 
+	gunicorn gateway:app --access-logfile - --error-logfile - --log-level debug --worker-class gevent --bind 127.0.0.1:8888 --chdir src
+
 up:
 	docker compose -f docker-compose.services.yml up -d
 

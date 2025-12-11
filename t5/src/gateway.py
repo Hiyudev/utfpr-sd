@@ -10,20 +10,52 @@ from flask import Blueprint, Flask, request, jsonify, session
 from flask_sse import sse
 import json
 from flask_cors import CORS
+
+from gevent import monkey
+
+monkey.patch_all()
+
+import grpc.experimental.gevent as grpc_gevent
+
+grpc_gevent.init_gevent()
+
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 from common.serial import deserialize_dict, serialize_dict
 
 
-from protocols.gateway_pb2 import OnLanceInvalidadoRequest, OnLanceInvalidadoResponse, OnLanceValidadoRequest, OnLanceValidadoResponse, OnLeilaoVencedorRequest
-from protocols.gateway_pb2 import OnLeilaoVencedorResponse, OnLinkPagamentoRequest, OnLinkPagamentoResponse, OnStatusPagamentoRequest, OnStatusPagamentoResponse
+from protocols.gateway_pb2 import (
+    OnLanceInvalidadoRequest,
+    OnLanceInvalidadoResponse,
+    OnLanceValidadoRequest,
+    OnLanceValidadoResponse,
+    OnLeilaoVencedorRequest,
+)
+from protocols.gateway_pb2 import (
+    OnLeilaoVencedorResponse,
+    OnLinkPagamentoRequest,
+    OnLinkPagamentoResponse,
+    OnStatusPagamentoRequest,
+    OnStatusPagamentoResponse,
+)
 from protocols.gateway_pb2_grpc import GatewayServicer, add_GatewayServicer_to_server
 
-from protocols.lance_pb2 import OnLanceRequest, OnLanceResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
+from protocols.lance_pb2 import (
+    OnLanceRequest,
+    OnLanceResponse,
+    OnEndLeilaoResponse,
+    OnEndLeilaoRequest,
+)
 from protocols.lance_pb2_grpc import LanceStub
 
-from protocols.leilao_pb2 import GetLeiloesRequest, GetLeiloesResponse, CreateLeilaoRequest, CreateLeilaoResponse, Leilao_instance
+from protocols.leilao_pb2 import (
+    GetLeiloesRequest,
+    GetLeiloesResponse,
+    CreateLeilaoRequest,
+    CreateLeilaoResponse,
+    Leilao_instance,
+)
 from protocols.leilao_pb2_grpc import LeilaoStub
 
 app = Flask(__name__)
@@ -43,10 +75,10 @@ global_interests: dict[str, list[str]] = {}
 global_interests_mutex: Lock = None
 EXCHANGE_NAME = "exchange"
 
-channel = grpc.insecure_channel('localhost:50051')
+channel = grpc.insecure_channel("localhost:50051")
 lanceStub = LanceStub(channel)
 
-channel = grpc.insecure_channel('localhost:50052')
+channel = grpc.insecure_channel("localhost:50052")
 leilaoStub = LeilaoStub(channel)
 
 
@@ -67,12 +99,12 @@ def route_leilao():
     if request.method == "GET":
         try:
             leiloes = []
-            #response = requests.get(global_ms_leilao_url)
-            #response.raise_for_status()
+            # response = requests.get(global_ms_leilao_url)
+            # response.raise_for_status()
             for leilao in leilaoStub.GetLeiloes(empty=""):
                 leiloes.append(leilao)
 
-            #fix later
+            # fix later
             return jsonify(json.dumps(leiloes)), 200
         except requests.exceptions.RequestException as e:
             return f"Erro na consulta dos leilões", 500
@@ -89,14 +121,21 @@ def route_leilao():
 
             data = deserialize_dict(body)
 
-            leilao = Leilao_instance(id=0, name= data["name"], description= data["description"], value= data["value"], start=data["start"], end= data["end"])
+            leilao = Leilao_instance(
+                id=0,
+                name=data["name"],
+                description=data["description"],
+                value=data["value"],
+                start=data["start"],
+                end=data["end"],
+            )
 
             response: CreateLeilaoResponse = leilaoStub.CreateLeilao(leilao)
 
             print(response.ok)
 
-            #response = requests.post(global_ms_leilao_url, json=body)
-            #response.raise_for_status()
+            # response = requests.post(global_ms_leilao_url, json=body)
+            # response.raise_for_status()
 
             return "Leilao criado com sucesso", 201
         except requests.exceptions.RequestException as e:
@@ -117,11 +156,14 @@ def route_lance():
 
             data = deserialize_dict(body)
 
-            
-            #response = requests.post(global_ms_lance_url, json=body)
-            #response.raise_for_status()
+            # response = requests.post(global_ms_lance_url, json=body)
+            # response.raise_for_status()
 
-            lanceRequest = OnLanceRequest(leilao_id=data["leilao_id"], client_id=data["client_id"], value=data["value"])
+            lanceRequest = OnLanceRequest(
+                leilao_id=data["leilao_id"],
+                client_id=data["client_id"],
+                value=data["value"],
+            )
 
             response: OnLanceResponse = lanceStub.OnLance(lanceRequest)
 
@@ -233,7 +275,7 @@ class GatewayServicer(GatewayServicer):
         print("[API-Gateway] Enviado um evento SSE pelo usuário")
 
         data = {}
-        
+
         data["value"] = request.value
         data["transaction_id"] = request.transaction_id
         data["status"] = request.status
@@ -269,28 +311,17 @@ def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
     add_GatewayServicer_to_server(GatewayServicer(), server)
     server.add_insecure_port("[::]:50054")
-    
-    # GRPC CONFLITANDO COM GUNICORN
+
     server.start()
     print("starting gateway server...")
     server.wait_for_termination()
 
+
 if __name__ == "gateway":
     global_interests_mutex = Lock()
-    
+
     threads: list[Thread] = []
     threads.append(Thread(target=serve, daemon=True))
 
     for thread in threads:
         thread.start()
-
-if __name__ == "__main__":
-    global_interests_mutex = Lock()
-    
-    threads: list[Thread] = []
-    threads.append(Thread(target=serve, daemon=True))
-
-    for thread in threads:
-        thread.start()
-        
-    thread.join()
