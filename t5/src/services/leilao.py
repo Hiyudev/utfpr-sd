@@ -135,8 +135,14 @@ def serve():
             has_elements_in_starts = len(start_leiloes) > 0
             has_elements_in_ends = len(end_leiloes) > 0
 
+            test = OnInitLeilaoRequest()
+            test.id = "test"
+            test.description = "test"
+            test.start = 0
+            test.end = 0
 
-            message_test = OnInitLeilaoRequest(id="test", description="test", start=0, end=0)
+
+            message_test = OnInitLeilaoRequest(id=test.id, description=test.description, start=test.start, end=test.end)
             response_test: OnInitLeilaoResponse = lanceStub.OnInitLeilao(message_test)
             print(response_test.message)
 
