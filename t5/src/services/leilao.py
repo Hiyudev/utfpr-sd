@@ -52,7 +52,7 @@ def trigger_end(payload: dict[str, any]):
 class LeilaoServicer(LeilaoServicer):
     def GetLeiloes(self, request: GetLeiloesRequest, _): #stream response
 
-        data: GetLeiloesResponse 
+        data = GetLeiloesResponse()
 
         for leilao in leiloes:
             assert "id" in leilao

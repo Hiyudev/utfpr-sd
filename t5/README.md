@@ -45,4 +45,6 @@ dentro da pasta `src`, rodar:
 
 `python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/leilao.proto`
 
-TODO: gateway e pagamento
+`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/pagamento.proto`
+
+TODO: gateway
