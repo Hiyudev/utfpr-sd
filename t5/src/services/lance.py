@@ -82,6 +82,8 @@ class LanceServicer(LanceServicer):
                 #    routing_key="lance_validado",
                 #)
                 #print("[MS-Lance] Lance validado!")
+
+                #TODO: chamar stub de gateway OnLanceValidado
                 return OnLanceResponse(ok=True, message="Lance Validado!")
             else:
                 #message = serialize_dict(body)
@@ -91,6 +93,8 @@ class LanceServicer(LanceServicer):
                 #    routing_key="lance_invalidado",
                 #)
                 #print("[MS-Lance] Lance invalidado!")
+
+                #TODO: chamar stub de gateway OnLanceInvalidado
                 return OnLanceResponse(ok=False, message="Lance invalidado!")
         else:
             print("[MS-Lance] leilao nao existe!")
@@ -151,6 +155,8 @@ class LanceServicer(LanceServicer):
             #channel.basic_publish(
             #    exchange=EXCHANGE_NAME, body=message, routing_key="leilao_vencedor"
             #)
+
+            #TODO: chamar stub de gateway OnLeilaoVencedor
             print("[MS-Lance] Leilao finalizado!")
 
             return OnEndLeilaoResponse(ok=True, leilao_id = leilao_id, cliente_vencedor = cliente_vencedor, lance_vencedor = lance_vencedor)
