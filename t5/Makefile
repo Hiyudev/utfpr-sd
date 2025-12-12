@@ -23,4 +23,7 @@ down:
 	docker compose -f docker-compose.services.yml down -v
 
 gen:
-	python -m grpc_tools.protoc -I./src/protocols --python_out=./src/utils --pyi_out=./src/utils --grpc_python_out=./src/utils ./src/protocols/externo.proto
+	python -m grpc_tools.protoc -I./src/protocols --python_out=./src/utils --mypy_out=./src/utils --grpc_python_out=./src/utils --mypy_grpc_out=./src/utils ./src/protocols/gateway.proto
+	python -m grpc_tools.protoc -I./src/protocols --python_out=./src/utils --mypy_out=./src/utils --grpc_python_out=./src/utils --mypy_grpc_out=./src/utils ./src/protocols/lance.proto
+	python -m grpc_tools.protoc -I./src/protocols --python_out=./src/utils --mypy_out=./src/utils --grpc_python_out=./src/utils --mypy_grpc_out=./src/utils ./src/protocols/leilao.proto
+	python -m grpc_tools.protoc -I./src/protocols --python_out=./src/utils --mypy_out=./src/utils --grpc_python_out=./src/utils --mypy_grpc_out=./src/utils ./src/protocols/pagamento.proto

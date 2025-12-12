@@ -1,4 +1,3 @@
-import functools
 from threading import Thread, Lock
 import uuid
 import sys
@@ -8,55 +7,49 @@ from concurrent import futures
 import grpc
 from flask import Blueprint, Flask, request, jsonify, session
 from flask_sse import sse
-import json
 from flask_cors import CORS
 
+# Soluciona problemas relacionados a conflitos de tipos de threads
 from gevent import monkey
 
 monkey.patch_all()
-
 import grpc.experimental.gevent as grpc_gevent
 
 grpc_gevent.init_gevent()
 
-# Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
-sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Adiciona o diretório raiz do projeto ao sys.path para importar 'common' e 'utils'
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), ".")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "./utils")))
 
 from common.serial import deserialize_dict, serialize_dict
 
 
-from protocols.gateway_pb2 import (
+from utils.gateway_pb2 import (
     OnLanceInvalidadoRequest,
     OnLanceInvalidadoResponse,
     OnLanceValidadoRequest,
     OnLanceValidadoResponse,
     OnLeilaoVencedorRequest,
-)
-from protocols.gateway_pb2 import (
     OnLeilaoVencedorResponse,
     OnLinkPagamentoRequest,
     OnLinkPagamentoResponse,
     OnStatusPagamentoRequest,
     OnStatusPagamentoResponse,
 )
-from protocols.gateway_pb2_grpc import GatewayServicer, add_GatewayServicer_to_server
+from utils.gateway_pb2_grpc import add_GatewayServicer_to_server, GatewayServicer as GatewayServicerTemplate
 
-from protocols.lance_pb2 import (
+from utils.lance_pb2 import (
     OnLanceRequest,
     OnLanceResponse,
-    OnEndLeilaoResponse,
-    OnEndLeilaoRequest,
 )
-from protocols.lance_pb2_grpc import LanceStub
+from utils.lance_pb2_grpc import LanceStub
 
-from protocols.leilao_pb2 import (
+from utils.leilao_pb2 import (
     GetLeiloesRequest,
-    GetLeiloesResponse,
     CreateLeilaoRequest,
     CreateLeilaoResponse,
-    Leilao_instance,
 )
-from protocols.leilao_pb2_grpc import LeilaoStub
+from utils.leilao_pb2_grpc import LeilaoStub
 
 app = Flask(__name__)
 CORS(app)
@@ -98,44 +91,50 @@ def route_leilao():
     # Requisito 3.1.2
     if request.method == "GET":
         try:
-            leiloes = []
-            # response = requests.get(global_ms_leilao_url)
-            # response.raise_for_status()
-            for leilao in leilaoStub.GetLeiloes(empty=""):
-                leiloes.append(leilao)
+            # Checked
+            leiloes_response = leilaoStub.GetLeiloes(GetLeiloesRequest())
 
-            # fix later
-            return jsonify(json.dumps(leiloes)), 200
+            payload = []
+            for leilao_instance in leiloes_response.leiloes:
+                payload.append({
+                    "id":leilao_instance.id,
+                    "name":leilao_instance.name,
+                    "description": leilao_instance.description,
+                    "value": float(leilao_instance.value),
+                    "start": leilao_instance.start,
+                    "end": leilao_instance.end,
+                })
+
+            return jsonify(payload), 200
         except requests.exceptions.RequestException as e:
             return f"Erro na consulta dos leilões", 500
     # Requisito 3.1.1
     elif request.method == "POST":
         try:
-            body = request.get_json()
+            data = request.get_json()
 
-            assert "name" in body
-            assert "description" in body
-            assert "value" in body
-            assert "start" in body
-            assert "end" in body
+            assert "name" in data
+            assert "description" in data
+            assert "value" in data
+            assert "start" in data
+            assert "end" in data
+            
+            assert isinstance(data["name"], str)
+            assert isinstance(data["description"], str)
+            assert isinstance(data["value"], float)
+            assert isinstance(data["start"], int)
+            assert isinstance(data["end"], int)
 
-            data = deserialize_dict(body)
-
-            leilao = Leilao_instance(
-                id=0,
+            response = leilaoStub.CreateLeilao(CreateLeilaoRequest(
                 name=data["name"],
                 description=data["description"],
                 value=data["value"],
                 start=data["start"],
                 end=data["end"],
-            )
-
-            response: CreateLeilaoResponse = leilaoStub.CreateLeilao(leilao)
-
-            print(response.ok)
-
-            # response = requests.post(global_ms_leilao_url, json=body)
-            # response.raise_for_status()
+            ))
+            
+            if not response.ok:
+                return f"Erro na criação do leilao", 500
 
             return "Leilao criado com sucesso", 201
         except requests.exceptions.RequestException as e:
@@ -213,7 +212,7 @@ def route_notificacoes(leilao_id: str):
         return "Method Not Allowed", 405
 
 
-class GatewayServicer(GatewayServicer):
+class GatewayServicer(GatewayServicerTemplate):
     def OnLanceInvalidado(self, request: OnLanceInvalidadoRequest, _):
 
         data = {}

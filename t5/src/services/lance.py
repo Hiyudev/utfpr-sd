@@ -6,15 +6,16 @@ import datetime
 
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../utils")))
 
-from protocols.lance_pb2 import OnLanceRequest, OnLanceResponse, OnInitLeilaoRequest, OnInitLeilaoResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
-from protocols.lance_pb2_grpc import LanceServicer, add_LanceServicer_to_server
+from utils.lance_pb2 import OnLanceRequest, OnLanceResponse, OnInitLeilaoRequest, OnInitLeilaoResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
+from utils.lance_pb2_grpc import LanceServicer, add_LanceServicer_to_server
 
-from protocols.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
-from protocols.pagamento_pb2_grpc import PagamentoStub
+from utils.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
+from utils.pagamento_pb2_grpc import PagamentoStub
 
-from protocols.gateway_pb2 import OnLanceInvalidadoRequest, OnLanceInvalidadoResponse, OnLanceValidadoRequest, OnLanceValidadoResponse, OnLeilaoVencedorRequest, OnLeilaoVencedorResponse
-from protocols.gateway_pb2_grpc import GatewayStub
+from utils.gateway_pb2 import OnLanceInvalidadoRequest, OnLanceInvalidadoResponse, OnLanceValidadoRequest, OnLanceValidadoResponse, OnLeilaoVencedorRequest, OnLeilaoVencedorResponse
+from utils.gateway_pb2_grpc import GatewayStub
 
 channel = grpc.insecure_channel('localhost:50053')
 pagamentoStub = PagamentoStub(channel)

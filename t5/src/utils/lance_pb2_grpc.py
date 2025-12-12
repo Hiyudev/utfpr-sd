@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from protocols import lance_pb2 as protocols_dot_lance__pb2
+import lance_pb2 as lance__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in protocols/lance_pb2_grpc.py depends on'
+        + ' but the generated code in lance_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,7 +26,10 @@ if _version_not_supported:
 
 
 class LanceStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    / Servico responsavel pelo gerenciamento dos lances.
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -36,38 +39,44 @@ class LanceStub(object):
         """
         self.OnLance = channel.unary_unary(
                 '/Lance/OnLance',
-                request_serializer=protocols_dot_lance__pb2.OnLanceRequest.SerializeToString,
-                response_deserializer=protocols_dot_lance__pb2.OnLanceResponse.FromString,
+                request_serializer=lance__pb2.OnLanceRequest.SerializeToString,
+                response_deserializer=lance__pb2.OnLanceResponse.FromString,
                 _registered_method=True)
         self.OnInitLeilao = channel.unary_unary(
                 '/Lance/OnInitLeilao',
-                request_serializer=protocols_dot_lance__pb2.OnInitLeilaoRequest.SerializeToString,
-                response_deserializer=protocols_dot_lance__pb2.OnInitLeilaoResponse.FromString,
+                request_serializer=lance__pb2.OnInitLeilaoRequest.SerializeToString,
+                response_deserializer=lance__pb2.OnInitLeilaoResponse.FromString,
                 _registered_method=True)
         self.OnEndLeilao = channel.unary_unary(
                 '/Lance/OnEndLeilao',
-                request_serializer=protocols_dot_lance__pb2.OnEndLeilaoRequest.SerializeToString,
-                response_deserializer=protocols_dot_lance__pb2.OnEndLeilaoResponse.FromString,
+                request_serializer=lance__pb2.OnEndLeilaoRequest.SerializeToString,
+                response_deserializer=lance__pb2.OnEndLeilaoResponse.FromString,
                 _registered_method=True)
 
 
 class LanceServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    / Servico responsavel pelo gerenciamento dos lances.
+
+    """
 
     def OnLance(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Realiza um lance
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnInitLeilao(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de leilao iniciado
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnEndLeilao(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de leilao finalizado
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -77,18 +86,18 @@ def add_LanceServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'OnLance': grpc.unary_unary_rpc_method_handler(
                     servicer.OnLance,
-                    request_deserializer=protocols_dot_lance__pb2.OnLanceRequest.FromString,
-                    response_serializer=protocols_dot_lance__pb2.OnLanceResponse.SerializeToString,
+                    request_deserializer=lance__pb2.OnLanceRequest.FromString,
+                    response_serializer=lance__pb2.OnLanceResponse.SerializeToString,
             ),
             'OnInitLeilao': grpc.unary_unary_rpc_method_handler(
                     servicer.OnInitLeilao,
-                    request_deserializer=protocols_dot_lance__pb2.OnInitLeilaoRequest.FromString,
-                    response_serializer=protocols_dot_lance__pb2.OnInitLeilaoResponse.SerializeToString,
+                    request_deserializer=lance__pb2.OnInitLeilaoRequest.FromString,
+                    response_serializer=lance__pb2.OnInitLeilaoResponse.SerializeToString,
             ),
             'OnEndLeilao': grpc.unary_unary_rpc_method_handler(
                     servicer.OnEndLeilao,
-                    request_deserializer=protocols_dot_lance__pb2.OnEndLeilaoRequest.FromString,
-                    response_serializer=protocols_dot_lance__pb2.OnEndLeilaoResponse.SerializeToString,
+                    request_deserializer=lance__pb2.OnEndLeilaoRequest.FromString,
+                    response_serializer=lance__pb2.OnEndLeilaoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -99,7 +108,10 @@ def add_LanceServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Lance(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    / Servico responsavel pelo gerenciamento dos lances.
+
+    """
 
     @staticmethod
     def OnLance(request,
@@ -116,8 +128,8 @@ class Lance(object):
             request,
             target,
             '/Lance/OnLance',
-            protocols_dot_lance__pb2.OnLanceRequest.SerializeToString,
-            protocols_dot_lance__pb2.OnLanceResponse.FromString,
+            lance__pb2.OnLanceRequest.SerializeToString,
+            lance__pb2.OnLanceResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -143,8 +155,8 @@ class Lance(object):
             request,
             target,
             '/Lance/OnInitLeilao',
-            protocols_dot_lance__pb2.OnInitLeilaoRequest.SerializeToString,
-            protocols_dot_lance__pb2.OnInitLeilaoResponse.FromString,
+            lance__pb2.OnInitLeilaoRequest.SerializeToString,
+            lance__pb2.OnInitLeilaoResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -170,8 +182,8 @@ class Lance(object):
             request,
             target,
             '/Lance/OnEndLeilao',
-            protocols_dot_lance__pb2.OnEndLeilaoRequest.SerializeToString,
-            protocols_dot_lance__pb2.OnEndLeilaoResponse.FromString,
+            lance__pb2.OnEndLeilaoRequest.SerializeToString,
+            lance__pb2.OnEndLeilaoResponse.FromString,
             options,
             channel_credentials,
             insecure,

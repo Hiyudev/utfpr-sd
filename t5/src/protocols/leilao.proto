@@ -1,27 +1,39 @@
-edition = "2023";
+syntax = "proto3";
 
+/// 
+/// Servico responsavel pelo gerenciamento de leiloes.
+///
 service Leilao {
-    rpc GetLeiloes(GetLeiloesRequest) returns (stream GetLeiloesResponse) {}
+    // Carrega todos os leiloes
+    rpc GetLeiloes(GetLeiloesRequest) returns (GetLeiloesResponse) {}
+    // Cria um leilao
     rpc CreateLeilao(CreateLeilaoRequest) returns (CreateLeilaoResponse) {}
 }
 
-message Leilao_instance {
+message LeilaoInstance {
     string id = 1;
     string name = 2;
     string description = 3;
-    string value = 4;
+    float value = 4;
     string start = 5;
     string end = 6;
 }
+
 message GetLeiloesRequest {
-    string empty = 1;
 }
+
 message GetLeiloesResponse {
-    Leilao_instance leilao = 1;
+    repeated LeilaoInstance leiloes = 1; 
 }
+
 message CreateLeilaoRequest {
-    Leilao_instance leilao = 1;
+    string name = 2;
+    string description = 3;
+    float value = 4;
+    int32 start = 5;
+    int32 end = 6;
 }
+
 message CreateLeilaoResponse {
     bool ok = 1;
 }

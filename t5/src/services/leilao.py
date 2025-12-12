@@ -13,18 +13,44 @@ from apscheduler.triggers.date import DateTrigger
 
 # Adiciona o diretório raiz do projeto ao sys.path para importar 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../utils")))
 
-from protocols.leilao_pb2 import Leilao_instance, GetLeiloesRequest, GetLeiloesResponse, CreateLeilaoRequest, CreateLeilaoResponse
-from protocols.leilao_pb2_grpc import LeilaoServicer, add_LeilaoServicer_to_server
+from utils.leilao_pb2 import (
+    LeilaoInstance,
+    GetLeiloesRequest,
+    GetLeiloesResponse,
+    CreateLeilaoResponse,
+    CreateLeilaoRequest,
+)
+from utils.leilao_pb2_grpc import (
+    LeilaoServicer as LeilaoServicerTemplate,
+    add_LeilaoServicer_to_server,
+)
 
-from protocols.lance_pb2 import OnLanceRequest, OnLanceResponse, OnInitLeilaoRequest, OnInitLeilaoResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
-from protocols.lance_pb2_grpc import LanceStub
+from utils.lance_pb2 import (
+    OnLanceRequest,
+    OnLanceResponse,
+    OnInitLeilaoRequest,
+    OnInitLeilaoResponse,
+    OnEndLeilaoResponse,
+    OnEndLeilaoRequest,
+)
+from utils.lance_pb2_grpc import LanceStub
 
 # Variáveis globais
 LEILOES = 3
-#EXCHANGE_NAME = "exchange"
+# EXCHANGE_NAME = "exchange"
 ID_SUMMARY_LENGTH = 8
-leiloes: list[dict[str, any]] = []
+leiloes: list[dict[str, any]] = [
+    {
+        "id": "udsuasd-sadausd",
+        "name": "Whatever",
+        "description": "Whaterrr",
+        "value": 6.999,
+        "start": datetime.datetime.now(),
+        "end": datetime.datetime.now() + datetime.timedelta(hours=1),
+    },
+]
 leiloes_mutex = None
 start_leiloes: list[dict[str, any]] = []
 start_leiloes_mutex: Lock = None
@@ -32,11 +58,12 @@ end_leiloes: list[dict[str, any]] = []
 end_leiloes_mutex: Lock = None
 
 
-#deixar isso global provavelmente é um erro gigantesco, nao sei se vai dar certo. 50051 = lance
-channel = grpc.insecure_channel('localhost:50051')
+# deixar isso global provavelmente é um erro gigantesco, nao sei se vai dar certo. 50051 = lance
+channel = grpc.insecure_channel("localhost:50051")
 lanceStub = LanceStub(channel)
 
 scheduler = BackgroundScheduler()
+
 
 def trigger_start(payload: dict[str, any]):
     start_leiloes_mutex.acquire()
@@ -49,10 +76,10 @@ def trigger_end(payload: dict[str, any]):
     end_leiloes.append(payload)
     end_leiloes_mutex.release()
 
-class LeilaoServicer(LeilaoServicer):
-    def GetLeiloes(self, request: GetLeiloesRequest, _): #stream response
 
-        data = GetLeiloesResponse()
+class LeilaoServicer(LeilaoServicerTemplate):
+    def GetLeiloes(self, request: GetLeiloesRequest, context):
+        payload: list = []
 
         for leilao in leiloes:
             assert "id" in leilao
@@ -69,21 +96,24 @@ class LeilaoServicer(LeilaoServicer):
             assert isinstance(leilao["start"], datetime.datetime)
             assert isinstance(leilao["end"], datetime.datetime)
 
-            data.id = leilao["id"],
-            data.name = leilao["name"],
-            data.description = leilao["description"],
-            data.value = leilao["value"],
-            data.start = str(leilao["start"].timestamp()),
-            data.end = str(leilao["end"].timestamp()),
-        
-            yield data
+            instance = LeilaoInstance(
+                id=leilao["id"],
+                name=leilao["name"],
+                description=leilao["description"],
+                value=leilao["value"],
+                start=str(leilao["start"].timestamp()),
+                end=str(leilao["end"].timestamp()),
+            )
+            payload.append(instance)
 
-    
+        return GetLeiloesResponse(leiloes=payload)
+
     def CreateLeilao(self, request: CreateLeilaoRequest, _):
-        data: dict[str, any]
         value_float = float(request.value)
         start_datetime = datetime.datetime.fromtimestamp(float(request.start))
         end_datetime = datetime.datetime.fromtimestamp(float(request.end))
+
+        data: dict[str, any] = {}
         data["start"] = start_datetime
         data["end"] = end_datetime
         data["value"] = value_float
@@ -94,7 +124,7 @@ class LeilaoServicer(LeilaoServicer):
         leiloes.append(data)
 
         now = datetime.datetime.now()
-        #acho q o certo seria mudar isso ne, ja q nao precisa mais
+        # acho q o certo seria mudar isso ne, ja q nao precisa mais
         if now < start_datetime:
             start_scheduler_trigger = DateTrigger(run_date=start_datetime)
             scheduler.add_job(
@@ -110,10 +140,8 @@ class LeilaoServicer(LeilaoServicer):
             trigger_end(data)
 
         leiloes_mutex.release()
-
-
         return CreateLeilaoResponse(ok=True)
-    
+
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
@@ -121,8 +149,11 @@ def serve():
     server.add_insecure_port("[::]:50052")
     server.start()
     print("starting leilao server...")
-    #server.wait_for_termination()
+    server.wait_for_termination()
 
+    return 1
+
+def checker():
     try:
         while True:
             sleep(0.2)  # Dorme por 200ms
@@ -136,29 +167,28 @@ def serve():
 
             if has_elements_in_starts:
                 for start_leilao in start_leiloes:
-                    #message = serialize_leilao(start_leilao)
-                    message_test = OnInitLeilaoRequest(id="", description="", start=0, end=0)
-                    message.id = start_leilao["id"]
-                    message.description = start_leilao["description"]
-                    message.start = start_leilao["start"]
-                    message.end = start_leilao["end"]
-
-                    response = lanceStub.OnInitLeilao(message)
-
-                    print(
-                        f"[MS-Leilao] Leilao com o id {start_leilao['id'][:ID_SUMMARY_LENGTH]} foi iniciado."
+                    response = lanceStub.OnInitLeilao(
+                        OnInitLeilaoRequest(
+                            id=start_leilao["id"],
+                            description=start_leilao["description"],
+                            start=start_leilao["start"].timestamp(),
+                            end=start_leilao["end"].timestamp(),
+                        )
                     )
+                    
+                    if response.ok:
+                        print(
+                            f"[MS-Leilao] Leilao com o id {start_leilao['id'][:ID_SUMMARY_LENGTH]} foi iniciado."
+                        )
 
             if has_elements_in_ends:
                 for end_leilao in end_leiloes:
-                    message = end_leilao["id"].encode("utf-8")
-                    message: OnEndLeilaoRequest
-                    message.id = end_leilao["id"]
-
-                    response = lanceStub.OnEndLeilao(message)
-                    print(
-                        f"[MS-Leilao] Leilao com o id {message[:ID_SUMMARY_LENGTH]} foi finalizado."
-                    )
+                    response = lanceStub.OnEndLeilao(OnEndLeilaoRequest(id=end_leilao["id"]))
+                    
+                    if response.ok:
+                        print(
+                            f"[MS-Leilao] Leilao com o id {end_leilao['id'][:ID_SUMMARY_LENGTH]} foi finalizado."
+                        )
 
             start_leiloes.clear()
             end_leiloes.clear()
@@ -167,18 +197,17 @@ def serve():
             end_leiloes_mutex.release()
     except KeyboardInterrupt:
         print("[MS-Leilao] Exiting...")
-        #connection.close()
-
-    #if connection.is_open:
-    #    connection.close()
-
-    return 1
-
 
 if __name__ == "__main__":
     scheduler.start()
     leiloes_mutex = Lock()
     start_leiloes_mutex = Lock()
     end_leiloes_mutex = Lock()
-    serve()
+    
+    threads: list[Thread] = []
+    threads.append(Thread(target=serve, daemon=True))
 
+    for thread in threads:
+        thread.start()
+    
+    checker()

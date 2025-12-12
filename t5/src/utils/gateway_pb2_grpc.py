@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from protocols import gateway_pb2 as protocols_dot_gateway__pb2
+import gateway_pb2 as gateway__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in protocols/gateway_pb2_grpc.py depends on'
+        + ' but the generated code in gateway_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,7 +26,10 @@ if _version_not_supported:
 
 
 class GatewayStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pela comunicacao com o front-end.
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -36,60 +39,68 @@ class GatewayStub(object):
         """
         self.OnLanceValidado = channel.unary_unary(
                 '/Gateway/OnLanceValidado',
-                request_serializer=protocols_dot_gateway__pb2.OnLanceValidadoRequest.SerializeToString,
-                response_deserializer=protocols_dot_gateway__pb2.OnLanceValidadoResponse.FromString,
+                request_serializer=gateway__pb2.OnLanceValidadoRequest.SerializeToString,
+                response_deserializer=gateway__pb2.OnLanceValidadoResponse.FromString,
                 _registered_method=True)
         self.OnLanceInvalidado = channel.unary_unary(
                 '/Gateway/OnLanceInvalidado',
-                request_serializer=protocols_dot_gateway__pb2.OnLanceInvalidadoRequest.SerializeToString,
-                response_deserializer=protocols_dot_gateway__pb2.OnLanceInvalidadoResponse.FromString,
+                request_serializer=gateway__pb2.OnLanceInvalidadoRequest.SerializeToString,
+                response_deserializer=gateway__pb2.OnLanceInvalidadoResponse.FromString,
                 _registered_method=True)
         self.OnLeilaoVencedor = channel.unary_unary(
                 '/Gateway/OnLeilaoVencedor',
-                request_serializer=protocols_dot_gateway__pb2.OnLeilaoVencedorRequest.SerializeToString,
-                response_deserializer=protocols_dot_gateway__pb2.OnLeilaoVencedorResponse.FromString,
+                request_serializer=gateway__pb2.OnLeilaoVencedorRequest.SerializeToString,
+                response_deserializer=gateway__pb2.OnLeilaoVencedorResponse.FromString,
                 _registered_method=True)
         self.OnLinkPagamento = channel.unary_unary(
                 '/Gateway/OnLinkPagamento',
-                request_serializer=protocols_dot_gateway__pb2.OnLinkPagamentoRequest.SerializeToString,
-                response_deserializer=protocols_dot_gateway__pb2.OnLinkPagamentoResponse.FromString,
+                request_serializer=gateway__pb2.OnLinkPagamentoRequest.SerializeToString,
+                response_deserializer=gateway__pb2.OnLinkPagamentoResponse.FromString,
                 _registered_method=True)
         self.OnStatusPagamento = channel.unary_unary(
                 '/Gateway/OnStatusPagamento',
-                request_serializer=protocols_dot_gateway__pb2.OnStatusPagamentoRequest.SerializeToString,
-                response_deserializer=protocols_dot_gateway__pb2.OnStatusPagamentoResponse.FromString,
+                request_serializer=gateway__pb2.OnStatusPagamentoRequest.SerializeToString,
+                response_deserializer=gateway__pb2.OnStatusPagamentoResponse.FromString,
                 _registered_method=True)
 
 
 class GatewayServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pela comunicacao com o front-end.
+
+    """
 
     def OnLanceValidado(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de lance validado
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnLanceInvalidado(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de lance invalidado
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnLeilaoVencedor(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de vencedor de um leilao
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnLinkPagamento(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de geracao de link de pagamento
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def OnStatusPagamento(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao do status do pagamento
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -99,28 +110,28 @@ def add_GatewayServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'OnLanceValidado': grpc.unary_unary_rpc_method_handler(
                     servicer.OnLanceValidado,
-                    request_deserializer=protocols_dot_gateway__pb2.OnLanceValidadoRequest.FromString,
-                    response_serializer=protocols_dot_gateway__pb2.OnLanceValidadoResponse.SerializeToString,
+                    request_deserializer=gateway__pb2.OnLanceValidadoRequest.FromString,
+                    response_serializer=gateway__pb2.OnLanceValidadoResponse.SerializeToString,
             ),
             'OnLanceInvalidado': grpc.unary_unary_rpc_method_handler(
                     servicer.OnLanceInvalidado,
-                    request_deserializer=protocols_dot_gateway__pb2.OnLanceInvalidadoRequest.FromString,
-                    response_serializer=protocols_dot_gateway__pb2.OnLanceInvalidadoResponse.SerializeToString,
+                    request_deserializer=gateway__pb2.OnLanceInvalidadoRequest.FromString,
+                    response_serializer=gateway__pb2.OnLanceInvalidadoResponse.SerializeToString,
             ),
             'OnLeilaoVencedor': grpc.unary_unary_rpc_method_handler(
                     servicer.OnLeilaoVencedor,
-                    request_deserializer=protocols_dot_gateway__pb2.OnLeilaoVencedorRequest.FromString,
-                    response_serializer=protocols_dot_gateway__pb2.OnLeilaoVencedorResponse.SerializeToString,
+                    request_deserializer=gateway__pb2.OnLeilaoVencedorRequest.FromString,
+                    response_serializer=gateway__pb2.OnLeilaoVencedorResponse.SerializeToString,
             ),
             'OnLinkPagamento': grpc.unary_unary_rpc_method_handler(
                     servicer.OnLinkPagamento,
-                    request_deserializer=protocols_dot_gateway__pb2.OnLinkPagamentoRequest.FromString,
-                    response_serializer=protocols_dot_gateway__pb2.OnLinkPagamentoResponse.SerializeToString,
+                    request_deserializer=gateway__pb2.OnLinkPagamentoRequest.FromString,
+                    response_serializer=gateway__pb2.OnLinkPagamentoResponse.SerializeToString,
             ),
             'OnStatusPagamento': grpc.unary_unary_rpc_method_handler(
                     servicer.OnStatusPagamento,
-                    request_deserializer=protocols_dot_gateway__pb2.OnStatusPagamentoRequest.FromString,
-                    response_serializer=protocols_dot_gateway__pb2.OnStatusPagamentoResponse.SerializeToString,
+                    request_deserializer=gateway__pb2.OnStatusPagamentoRequest.FromString,
+                    response_serializer=gateway__pb2.OnStatusPagamentoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -131,7 +142,10 @@ def add_GatewayServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Gateway(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pela comunicacao com o front-end.
+
+    """
 
     @staticmethod
     def OnLanceValidado(request,
@@ -148,8 +162,8 @@ class Gateway(object):
             request,
             target,
             '/Gateway/OnLanceValidado',
-            protocols_dot_gateway__pb2.OnLanceValidadoRequest.SerializeToString,
-            protocols_dot_gateway__pb2.OnLanceValidadoResponse.FromString,
+            gateway__pb2.OnLanceValidadoRequest.SerializeToString,
+            gateway__pb2.OnLanceValidadoResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -175,8 +189,8 @@ class Gateway(object):
             request,
             target,
             '/Gateway/OnLanceInvalidado',
-            protocols_dot_gateway__pb2.OnLanceInvalidadoRequest.SerializeToString,
-            protocols_dot_gateway__pb2.OnLanceInvalidadoResponse.FromString,
+            gateway__pb2.OnLanceInvalidadoRequest.SerializeToString,
+            gateway__pb2.OnLanceInvalidadoResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -202,8 +216,8 @@ class Gateway(object):
             request,
             target,
             '/Gateway/OnLeilaoVencedor',
-            protocols_dot_gateway__pb2.OnLeilaoVencedorRequest.SerializeToString,
-            protocols_dot_gateway__pb2.OnLeilaoVencedorResponse.FromString,
+            gateway__pb2.OnLeilaoVencedorRequest.SerializeToString,
+            gateway__pb2.OnLeilaoVencedorResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -229,8 +243,8 @@ class Gateway(object):
             request,
             target,
             '/Gateway/OnLinkPagamento',
-            protocols_dot_gateway__pb2.OnLinkPagamentoRequest.SerializeToString,
-            protocols_dot_gateway__pb2.OnLinkPagamentoResponse.FromString,
+            gateway__pb2.OnLinkPagamentoRequest.SerializeToString,
+            gateway__pb2.OnLinkPagamentoResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -256,8 +270,8 @@ class Gateway(object):
             request,
             target,
             '/Gateway/OnStatusPagamento',
-            protocols_dot_gateway__pb2.OnStatusPagamentoRequest.SerializeToString,
-            protocols_dot_gateway__pb2.OnStatusPagamentoResponse.FromString,
+            gateway__pb2.OnStatusPagamentoRequest.SerializeToString,
+            gateway__pb2.OnStatusPagamentoResponse.FromString,
             options,
             channel_credentials,
             insecure,

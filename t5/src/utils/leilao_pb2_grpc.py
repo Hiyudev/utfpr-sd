@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from protocols import leilao_pb2 as protocols_dot_leilao__pb2
+import leilao_pb2 as leilao__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in protocols/leilao_pb2_grpc.py depends on'
+        + ' but the generated code in leilao_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,7 +26,10 @@ if _version_not_supported:
 
 
 class LeilaoStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """/ 
+    / Servico responsavel pelo gerenciamento de leiloes.
+    /
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -34,29 +37,34 @@ class LeilaoStub(object):
         Args:
             channel: A grpc.Channel.
         """
-        self.GetLeiloes = channel.unary_stream(
+        self.GetLeiloes = channel.unary_unary(
                 '/Leilao/GetLeiloes',
-                request_serializer=protocols_dot_leilao__pb2.GetLeiloesRequest.SerializeToString,
-                response_deserializer=protocols_dot_leilao__pb2.GetLeiloesResponse.FromString,
+                request_serializer=leilao__pb2.GetLeiloesRequest.SerializeToString,
+                response_deserializer=leilao__pb2.GetLeiloesResponse.FromString,
                 _registered_method=True)
         self.CreateLeilao = channel.unary_unary(
                 '/Leilao/CreateLeilao',
-                request_serializer=protocols_dot_leilao__pb2.CreateLeilaoRequest.SerializeToString,
-                response_deserializer=protocols_dot_leilao__pb2.CreateLeilaoResponse.FromString,
+                request_serializer=leilao__pb2.CreateLeilaoRequest.SerializeToString,
+                response_deserializer=leilao__pb2.CreateLeilaoResponse.FromString,
                 _registered_method=True)
 
 
 class LeilaoServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """/ 
+    / Servico responsavel pelo gerenciamento de leiloes.
+    /
+    """
 
     def GetLeiloes(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Carrega todos os leiloes
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
 
     def CreateLeilao(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Cria um leilao
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -64,15 +72,15 @@ class LeilaoServicer(object):
 
 def add_LeilaoServicer_to_server(servicer, server):
     rpc_method_handlers = {
-            'GetLeiloes': grpc.unary_stream_rpc_method_handler(
+            'GetLeiloes': grpc.unary_unary_rpc_method_handler(
                     servicer.GetLeiloes,
-                    request_deserializer=protocols_dot_leilao__pb2.GetLeiloesRequest.FromString,
-                    response_serializer=protocols_dot_leilao__pb2.GetLeiloesResponse.SerializeToString,
+                    request_deserializer=leilao__pb2.GetLeiloesRequest.FromString,
+                    response_serializer=leilao__pb2.GetLeiloesResponse.SerializeToString,
             ),
             'CreateLeilao': grpc.unary_unary_rpc_method_handler(
                     servicer.CreateLeilao,
-                    request_deserializer=protocols_dot_leilao__pb2.CreateLeilaoRequest.FromString,
-                    response_serializer=protocols_dot_leilao__pb2.CreateLeilaoResponse.SerializeToString,
+                    request_deserializer=leilao__pb2.CreateLeilaoRequest.FromString,
+                    response_serializer=leilao__pb2.CreateLeilaoResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -83,7 +91,10 @@ def add_LeilaoServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Leilao(object):
-    """Missing associated documentation comment in .proto file."""
+    """/ 
+    / Servico responsavel pelo gerenciamento de leiloes.
+    /
+    """
 
     @staticmethod
     def GetLeiloes(request,
@@ -96,12 +107,12 @@ class Leilao(object):
             wait_for_ready=None,
             timeout=None,
             metadata=None):
-        return grpc.experimental.unary_stream(
+        return grpc.experimental.unary_unary(
             request,
             target,
             '/Leilao/GetLeiloes',
-            protocols_dot_leilao__pb2.GetLeiloesRequest.SerializeToString,
-            protocols_dot_leilao__pb2.GetLeiloesResponse.FromString,
+            leilao__pb2.GetLeiloesRequest.SerializeToString,
+            leilao__pb2.GetLeiloesResponse.FromString,
             options,
             channel_credentials,
             insecure,
@@ -127,8 +138,8 @@ class Leilao(object):
             request,
             target,
             '/Leilao/CreateLeilao',
-            protocols_dot_leilao__pb2.CreateLeilaoRequest.SerializeToString,
-            protocols_dot_leilao__pb2.CreateLeilaoResponse.FromString,
+            leilao__pb2.CreateLeilaoRequest.SerializeToString,
+            leilao__pb2.CreateLeilaoResponse.FromString,
             options,
             channel_credentials,
             insecure,

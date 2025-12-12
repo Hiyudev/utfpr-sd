@@ -8,16 +8,17 @@ from threading import Thread, Lock
 from time import sleep
 from flask import Flask, request, jsonify
 
-# Adiciona o diretório raiz do projeto ao sys.path para importar 'common'
+# Adiciona o diretório raiz do projeto ao sys.path para importar 'utils'
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../utils")))
 
 from common.serial import deserialize_dict, serialize_dict
 
-from protocols.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
-from protocols.pagamento_pb2_grpc import PagamentoServicer, add_PagamentoServicer_to_server
+from utils.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
+from utils.pagamento_pb2_grpc import PagamentoServicer, add_PagamentoServicer_to_server
 
-from protocols.gateway_pb2 import OnLinkPagamentoRequest, OnLinkPagamentoResponse, OnStatusPagamentoRequest, OnStatusPagamentoResponse
-from protocols.gateway_pb2_grpc import GatewayStub
+from utils.gateway_pb2 import OnLinkPagamentoRequest, OnLinkPagamentoResponse, OnStatusPagamentoRequest, OnStatusPagamentoResponse
+from utils.gateway_pb2_grpc import GatewayStub
 
 channel = grpc.insecure_channel('localhost:50054')
 gatewayStub = GatewayStub(channel)

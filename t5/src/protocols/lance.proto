@@ -1,8 +1,14 @@
-edition = "2023";
+syntax = "proto3";
 
+//
+/// Servico responsavel pelo gerenciamento dos lances.
+//
 service Lance {
+    // Realiza um lance
     rpc OnLance(OnLanceRequest) returns (OnLanceResponse) {}
+    // Ao receber notificacao de leilao iniciado
     rpc OnInitLeilao(OnInitLeilaoRequest) returns (OnInitLeilaoResponse) {}
+    // Ao receber notificacao de leilao finalizado
     rpc OnEndLeilao(OnEndLeilaoRequest) returns (OnEndLeilaoResponse) {}
 }
 
@@ -26,7 +32,6 @@ message OnInitLeilaoRequest {
 
 message OnInitLeilaoResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnEndLeilaoRequest {

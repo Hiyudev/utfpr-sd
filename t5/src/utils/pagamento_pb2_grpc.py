@@ -3,7 +3,7 @@
 import grpc
 import warnings
 
-from protocols import pagamento_pb2 as protocols_dot_pagamento__pb2
+import pagamento_pb2 as pagamento__pb2
 
 GRPC_GENERATED_VERSION = '1.76.0'
 GRPC_VERSION = grpc.__version__
@@ -18,7 +18,7 @@ except ImportError:
 if _version_not_supported:
     raise RuntimeError(
         f'The grpc package installed is at version {GRPC_VERSION},'
-        + ' but the generated code in protocols/pagamento_pb2_grpc.py depends on'
+        + ' but the generated code in pagamento_pb2_grpc.py depends on'
         + f' grpcio>={GRPC_GENERATED_VERSION}.'
         + f' Please upgrade your grpc module to grpcio>={GRPC_GENERATED_VERSION}'
         + f' or downgrade your generated code using grpcio-tools<={GRPC_VERSION}.'
@@ -26,7 +26,10 @@ if _version_not_supported:
 
 
 class PagamentoStub(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pelo gerenciamento dos pagamentos.
+
+    """
 
     def __init__(self, channel):
         """Constructor.
@@ -36,16 +39,20 @@ class PagamentoStub(object):
         """
         self.OnWinner = channel.unary_unary(
                 '/Pagamento/OnWinner',
-                request_serializer=protocols_dot_pagamento__pb2.OnWinnerRequest.SerializeToString,
-                response_deserializer=protocols_dot_pagamento__pb2.OnWinnerResponse.FromString,
+                request_serializer=pagamento__pb2.OnWinnerRequest.SerializeToString,
+                response_deserializer=pagamento__pb2.OnWinnerResponse.FromString,
                 _registered_method=True)
 
 
 class PagamentoServicer(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pelo gerenciamento dos pagamentos.
+
+    """
 
     def OnWinner(self, request, context):
-        """Missing associated documentation comment in .proto file."""
+        """Ao receber notificacao de vencedor de um leilao
+        """
         context.set_code(grpc.StatusCode.UNIMPLEMENTED)
         context.set_details('Method not implemented!')
         raise NotImplementedError('Method not implemented!')
@@ -55,8 +62,8 @@ def add_PagamentoServicer_to_server(servicer, server):
     rpc_method_handlers = {
             'OnWinner': grpc.unary_unary_rpc_method_handler(
                     servicer.OnWinner,
-                    request_deserializer=protocols_dot_pagamento__pb2.OnWinnerRequest.FromString,
-                    response_serializer=protocols_dot_pagamento__pb2.OnWinnerResponse.SerializeToString,
+                    request_deserializer=pagamento__pb2.OnWinnerRequest.FromString,
+                    response_serializer=pagamento__pb2.OnWinnerResponse.SerializeToString,
             ),
     }
     generic_handler = grpc.method_handlers_generic_handler(
@@ -67,7 +74,10 @@ def add_PagamentoServicer_to_server(servicer, server):
 
  # This class is part of an EXPERIMENTAL API.
 class Pagamento(object):
-    """Missing associated documentation comment in .proto file."""
+    """
+    Servico responsavel pelo gerenciamento dos pagamentos.
+
+    """
 
     @staticmethod
     def OnWinner(request,
@@ -84,8 +94,8 @@ class Pagamento(object):
             request,
             target,
             '/Pagamento/OnWinner',
-            protocols_dot_pagamento__pb2.OnWinnerRequest.SerializeToString,
-            protocols_dot_pagamento__pb2.OnWinnerResponse.FromString,
+            pagamento__pb2.OnWinnerRequest.SerializeToString,
+            pagamento__pb2.OnWinnerResponse.FromString,
             options,
             channel_credentials,
             insecure,

@@ -1,10 +1,18 @@
-edition = "2023";
+syntax = "proto3";
 
+//
+// Servico responsavel pela comunicacao com o front-end.
+//
 service Gateway {
+    // Ao receber notificacao de lance validado
     rpc OnLanceValidado(OnLanceValidadoRequest) returns (OnLanceValidadoResponse) {}
+    // Ao receber notificacao de lance invalidado
     rpc OnLanceInvalidado(OnLanceInvalidadoRequest) returns (OnLanceInvalidadoResponse) {}
+    // Ao receber notificacao de vencedor de um leilao
     rpc OnLeilaoVencedor(OnLeilaoVencedorRequest) returns (OnLeilaoVencedorResponse) {}
+    // Ao receber notificacao de geracao de link de pagamento
     rpc OnLinkPagamento(OnLinkPagamentoRequest) returns (OnLinkPagamentoResponse) {}
+    // Ao receber notificacao do status do pagamento
     rpc OnStatusPagamento(OnStatusPagamentoRequest) returns (OnStatusPagamentoResponse) {}
 }
 

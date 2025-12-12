@@ -1,6 +1,10 @@
-edition = "2023";
+syntax = "proto3";
 
+//
+// Servico responsavel pelo gerenciamento dos pagamentos.
+//
 service Pagamento {
+    // Ao receber notificacao de vencedor de um leilao
     rpc OnWinner (OnWinnerRequest) returns (OnWinnerResponse);
 }
 
