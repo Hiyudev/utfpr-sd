@@ -8,26 +8,29 @@ Caso adicione uma nova biblioteca:
 1. `pip install <nome-da-biblioteca>` -- Instala a nova biblioteca
 2. `pip freeze > requirements.txt` -- Atualiza o arquivo de dependências
 
-# Configuração do RabbitMQ e Redis
-No projeto, é utilizado o Docker para instanciar o RabbitMQ, e o Redis para o Flask-SSE:
-1. `docker-compose -f docker-compose.services.yml up -d` -- Instancia o RabbitMQ/Redis
+# Configuração do Redis
+No projeto, é utilizado o Docker para instanciar o Redis que é utilizada pelo Flask-SSE:
+1. `docker-compose -f docker-compose.redis.yml up -d` -- Instancia o Redis
 
-Caso a execução falhe, e um problema de porta em uso esteja presente:
+Caso a execução falhe, possivelmente é um problema de porta em uso esteja presente:
 1. `./scripts/fix_port_used.sh` -- Elimina os processos que estão utilizando as portas
 
-Caso queira parar o RabbitMQ/Redis:
-1. `docker-compose -f docker-compose.services.yml down` -- Para o RabbitMQ
+Caso queira parar o Redis:
+1. `docker-compose -f docker-compose.redis.yml down` -- Para o Redis
 
-Caso queira "resetar" o RabbitMQ/Redis:
-1. `docker-compose -f docker-compose.services.yml down -v` -- Para e remove volumes do RabbitMQ/Redis, e volumes seriam os dados persistentes do RabbitMQ/Redis.
+Caso queira "resetar" o Redis:
+1. `docker-compose -f docker-compose.redis.yml down -v` -- Para e remove volumes do Redis, e volumes seriam os dados persistentes do Redis.
 
 # Execução do projeto
-É necessário que o RabbitMQ/Redis esteja em execução.
-
-Em particular ao `API Gateway`, deve ser executado o seguinte comando no diretório `src`:
-`gunicorn gateway:app --worker-class gevent --bind 127.0.0.1:8888`
+É necessário que o Redis esteja em execução.
 
 Em particular ao `Client`, deve ser executado o seguinte comando no diretório `client`: `npm run dev`
+O resto dos serviços são executados via terminal, cada um em uma aba diferente e executando o comando `make {nome_do_serviço}`:
+- `make ex` -- Executa o Serviço de pagamento externo
+- `make pa` -- Executa o MS Pagamento
+- `make le` -- Executa o MS Leilao
+- `make la` -- Executa o MS Lance
+- `make api` -- Executa o API Gateway
 
 # Portas
 - `5000`: `MS Pagamento`
@@ -36,15 +39,5 @@ Em particular ao `Client`, deve ser executado o seguinte comando no diretório `
 - `8100`: `MS Lance`
 - `8888`: `API Gateway`
 
-
 # Gerando gRPC
-
-dentro da pasta `src`, rodar:
-
-`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/lance.proto`
-
-`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/leilao.proto`
-
-`python -m grpc_tools.protoc -I=.  --python_out=. --pyi_out=. --grpc_python_out=. ./protocols/pagamento.proto`
-
-TODO: gateway
+Para gerar os arquivos gRPC, basta executar o comando `make gen` no terminal, estando no diretório raiz do projeto.
