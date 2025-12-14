@@ -41,16 +41,7 @@ from utils.lance_pb2_grpc import LanceStub
 LEILOES = 3
 # EXCHANGE_NAME = "exchange"
 ID_SUMMARY_LENGTH = 8
-leiloes: list[dict[str, any]] = [
-    {
-        "id": "udsuasd-sadausd",
-        "name": "Whatever",
-        "description": "Whaterrr",
-        "value": 6.999,
-        "start": datetime.datetime.now(),
-        "end": datetime.datetime.now() + datetime.timedelta(hours=1),
-    },
-]
+leiloes: list[dict[str, any]] = []
 leiloes_mutex = None
 start_leiloes: list[dict[str, any]] = []
 start_leiloes_mutex: Lock = None
@@ -105,20 +96,19 @@ class LeilaoServicer(LeilaoServicerTemplate):
                 end=str(leilao["end"].timestamp()),
             )
             payload.append(instance)
-
         return GetLeiloesResponse(leiloes=payload)
 
     def CreateLeilao(self, request: CreateLeilaoRequest, _):
-        value_float = float(request.value)
         start_datetime = datetime.datetime.fromtimestamp(float(request.start))
         end_datetime = datetime.datetime.fromtimestamp(float(request.end))
 
         data: dict[str, any] = {}
         data["start"] = start_datetime
         data["end"] = end_datetime
-        data["value"] = value_float
+        data["value"] = request.value
         data["id"] = str(uuid.uuid4())
         data["description"] = request.description
+        data["name"] = request.name
 
         leiloes_mutex.acquire()
         leiloes.append(data)

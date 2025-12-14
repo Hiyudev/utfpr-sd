@@ -36,7 +36,10 @@ from utils.gateway_pb2 import (
     OnStatusPagamentoRequest,
     OnStatusPagamentoResponse,
 )
-from utils.gateway_pb2_grpc import add_GatewayServicer_to_server, GatewayServicer as GatewayServicerTemplate
+from utils.gateway_pb2_grpc import (
+    add_GatewayServicer_to_server,
+    GatewayServicer as GatewayServicerTemplate,
+)
 
 from utils.lance_pb2 import (
     OnLanceRequest,
@@ -96,14 +99,16 @@ def route_leilao():
 
             payload = []
             for leilao_instance in leiloes_response.leiloes:
-                payload.append({
-                    "id":leilao_instance.id,
-                    "name":leilao_instance.name,
-                    "description": leilao_instance.description,
-                    "value": float(leilao_instance.value),
-                    "start": leilao_instance.start,
-                    "end": leilao_instance.end,
-                })
+                payload.append(
+                    {
+                        "id": leilao_instance.id,
+                        "name": leilao_instance.name,
+                        "description": leilao_instance.description,
+                        "value": float(leilao_instance.value),
+                        "start": leilao_instance.start,
+                        "end": leilao_instance.end,
+                    }
+                )
 
             return jsonify(payload), 200
         except requests.exceptions.RequestException as e:
@@ -118,21 +123,23 @@ def route_leilao():
             assert "value" in data
             assert "start" in data
             assert "end" in data
-            
+
             assert isinstance(data["name"], str)
             assert isinstance(data["description"], str)
             assert isinstance(data["value"], float)
             assert isinstance(data["start"], int)
             assert isinstance(data["end"], int)
 
-            response = leilaoStub.CreateLeilao(CreateLeilaoRequest(
-                name=data["name"],
-                description=data["description"],
-                value=data["value"],
-                start=data["start"],
-                end=data["end"],
-            ))
-            
+            response = leilaoStub.CreateLeilao(
+                CreateLeilaoRequest(
+                    name=data["name"],
+                    description=data["description"],
+                    value=data["value"],
+                    start=data["start"],
+                    end=data["end"],
+                )
+            )
+
             if not response.ok:
                 return f"Erro na criação do leilao", 500
 
@@ -153,22 +160,18 @@ def route_lance():
             assert "client_id" in body
             assert "value" in body
 
-            data = deserialize_dict(body)
-
-            # response = requests.post(global_ms_lance_url, json=body)
-            # response.raise_for_status()
-
-            lanceRequest = OnLanceRequest(
-                leilao_id=data["leilao_id"],
-                client_id=data["client_id"],
-                value=data["value"],
+            response = lanceStub.OnLance(
+                OnLanceRequest(
+                    leilao_id=body["leilao_id"],
+                    client_id=body["client_id"],
+                    value=str(body["value"]),
+                )
             )
 
-            response: OnLanceResponse = lanceStub.OnLance(lanceRequest)
-
-            print(response.message)
-
-            return "Lance realizado", 201
+            if response.ok:
+                return "Lance realizado", 201
+            else:
+                return "Erro no lance", 500
         except requests.exceptions.RequestException as e:
             return f"Erro no lance: {e}", 500
     else:
@@ -214,96 +217,99 @@ def route_notificacoes(leilao_id: str):
 
 class GatewayServicer(GatewayServicerTemplate):
     def OnLanceInvalidado(self, request: OnLanceInvalidadoRequest, _):
-
+        targeted_client_id = request.client_id
+        
         data = {}
-
         data["leilao_id"] = request.leilao_id
         data["client_id"] = request.client_id
         data["value"] = request.value
-        targeted_client_id = request.client_id
 
+        print(f"[API-Gateway] Enviado um evento SSE pelo leilão para o cliente {targeted_client_id}")
+            
         with app.app_context():
-            print(f"notification_{targeted_client_id}")
             payload = data.copy()
             payload["event_name"] = "lance invalidado"
+            
             sse.publish(payload, type=f"notification_{targeted_client_id}")
-        return OnLanceInvalidadoResponse(ok=True, message="Lance invalidado")
+        return OnLanceInvalidadoResponse(ok=True)
 
     def OnLanceValidado(self, request: OnLanceValidadoRequest, _):
-        data = {}
         event_leilao_id = request.leilao_id
 
+        data = {}
         data["leilao_id"] = request.leilao_id
         data["client_id"] = request.client_id
         data["value"] = request.value
+        
         for client_id, leiloes in global_interests.items():
             if event_leilao_id not in leiloes:
                 continue
 
-            print("[API-Gateway] Enviado um evento SSE pelo leilão")
+            print(f"[API-Gateway] Enviado um evento SSE pelo leilão para o cliente {client_id}")
 
             with app.app_context():
-                print(f"notification_{client_id}")
-                payload = serialize_dict(data)
+                payload = data.copy()
                 payload["event_name"] = "lance validado"
+                
                 sse.publish(payload, type=f"notification_{client_id}")
-        return OnLanceValidadoResponse(ok=True, message="Lance validado")
+        return OnLanceValidadoResponse(ok=True)
 
     def OnLeilaoVencedor(self, request: OnLeilaoVencedorRequest, _):
-
-        data = {}
         event_leilao_id = request.leilao_id
 
+        data = {}
         data["leilao_id"] = request.leilao_id
         data["lance_vencedor"] = request.lance_vencedor
         data["cliente_vencedor"] = request.cliente_vencedor
+        
         for client_id, leiloes in global_interests.items():
             if event_leilao_id not in leiloes:
                 continue
 
-            print("[API-Gateway] Enviado um evento SSE pelo leilão")
+            print(f"[API-Gateway] Enviado um evento SSE pelo leilão para o cliente {client_id}")
 
             with app.app_context():
-                print(f"notification_{client_id}")
-                payload = serialize_dict(data)
+                payload = data.copy()
                 payload["event_name"] = "leilao vencedor"
+                
                 sse.publish(payload, type=f"notification_{client_id}")
-        return OnLeilaoVencedorResponse(ok=True, message="leilao vencedor")
+        return OnLeilaoVencedorResponse(ok=True)
 
     def OnStatusPagamento(self, request: OnStatusPagamentoRequest, _):
-        print("[API-Gateway] Enviado um evento SSE pelo usuário")
-
+        targeted_client_id = request.client_id
+        
         data = {}
-
         data["value"] = request.value
         data["transaction_id"] = request.transaction_id
         data["status"] = request.status
         data["client_id"] = request.client_id
 
-        targeted_client_id = request.client_id
-
+        print(f"[API-Gateway] Enviado um evento SSE pelo usuário para o cliente {targeted_client_id}")
+            
         with app.app_context():
-            print(f"notification_{targeted_client_id}")
             payload = data.copy()
             payload["event_name"] = "status pagamento"
+            
             sse.publish(payload, type=f"notification_{targeted_client_id}")
-        return OnStatusPagamentoResponse(ok=True, message="status pagamento")
+        return OnStatusPagamentoResponse(ok=True)
 
     def OnLinkPagamento(self, request: OnLinkPagamentoRequest, _):
+        targeted_client_id = request.cliente_vencedor
+        
         data = {}
-
         data["leilao_id"] = request.leilao_id
         data["cliente_vencedor"] = request.cliente_vencedor
         data["lance_vencedor"] = request.lance_vencedor
         data["link"] = request.link
-        targeted_client_id = request.client_id
 
+        print(f"[API-Gateway] Enviado um evento SSE pelo usuário para o cliente {targeted_client_id}")
+        
         with app.app_context():
-            print(f"notification_{targeted_client_id}")
             payload = data.copy()
             payload["event_name"] = "link pagamento"
+            
             sse.publish(payload, type=f"notification_{targeted_client_id}")
-        return OnLinkPagamentoResponse(ok=True, message="Link pagamento")
+        return OnLinkPagamentoResponse(ok=True)
 
 
 def serve():

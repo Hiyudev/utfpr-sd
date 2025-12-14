@@ -8,19 +8,33 @@ import datetime
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "../utils")))
 
-from utils.lance_pb2 import OnLanceRequest, OnLanceResponse, OnInitLeilaoRequest, OnInitLeilaoResponse, OnEndLeilaoResponse, OnEndLeilaoRequest
+from utils.lance_pb2 import (
+    OnLanceRequest,
+    OnLanceResponse,
+    OnInitLeilaoRequest,
+    OnInitLeilaoResponse,
+    OnEndLeilaoResponse,
+    OnEndLeilaoRequest,
+)
 from utils.lance_pb2_grpc import LanceServicer, add_LanceServicer_to_server
 
 from utils.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
 from utils.pagamento_pb2_grpc import PagamentoStub
 
-from utils.gateway_pb2 import OnLanceInvalidadoRequest, OnLanceInvalidadoResponse, OnLanceValidadoRequest, OnLanceValidadoResponse, OnLeilaoVencedorRequest, OnLeilaoVencedorResponse
+from utils.gateway_pb2 import (
+    OnLanceInvalidadoRequest,
+    OnLanceInvalidadoResponse,
+    OnLanceValidadoRequest,
+    OnLanceValidadoResponse,
+    OnLeilaoVencedorRequest,
+    OnLeilaoVencedorResponse,
+)
 from utils.gateway_pb2_grpc import GatewayStub
 
-channel = grpc.insecure_channel('localhost:50053')
+channel = grpc.insecure_channel("localhost:50053")
 pagamentoStub = PagamentoStub(channel)
 
-channel = grpc.insecure_channel('localhost:50054')
+channel = grpc.insecure_channel("localhost:50054")
 gatewayStub = GatewayStub(channel)
 
 
@@ -28,47 +42,48 @@ gatewayStub = GatewayStub(channel)
 #    rpc Lance(LanceRequest) returns (LanceResponse) {}
 #    rpc OnInitLeilao(OnInitLeilaoRequest) returns (OnInitLeilaoResponse) {}
 #    rpc OnEndLeilao(OnEndLeilaoRequest) returns (OnEndLeilaoResponse) {}
-#}
+# }
 
-#message LanceRequest {
+# message LanceRequest {
 #    string leilao_id = 1;
 #    string client_id = 2;
 #    string value = 3;
-#}
+# }
 #
-#message LanceResponse {
+# message LanceResponse {
 #    bool ok = 1;
 #    string message = 2;
-#}
+# }
 #
-#message OnInitLeilaoRequest {
+# message OnInitLeilaoRequest {
 #    string id = 1;
 #    string description = 2;
 #    float start = 3;
 #    float end = 4;
-#}
+# }
 #
-#message OnInitLeilaoResponse {
+# message OnInitLeilaoResponse {
 #    bool ok = 1;
 #    string message = 2;
-#}
+# }
 #
-#message OnEndLeilaoRequest {
+# message OnEndLeilaoRequest {
 #    string id = 1;
-#}
+# }
 #
-#message OnEndLeilaoResponse {
+# message OnEndLeilaoResponse {
 #    bool ok = 1;
 #    string message = 2;
-#}
+# }
 
 # Variáveis globais
 leiloes: list[dict[str, str | datetime.datetime]] = []
 
+
 class LanceServicer(LanceServicer):
     def OnLance(self, request: OnLanceRequest, _):
-        # ...
         lance = request
+
         # checa se id do leilao existe em leiloes
         if any(lance.leilao_id in d["id"] for d in leiloes):
             print("[MS-Lance] leilao existe!")
@@ -76,6 +91,7 @@ class LanceServicer(LanceServicer):
             lance_vencedor = [
                 d.get("highest_bid") for d in leiloes if lance.leilao_id in d["id"]
             ]
+
             if float(lance.value) > float(lance_vencedor[0]):
                 # Requisito 4.4 - Se o lance for válido, o MS Lance publica o evento na fila lance_validado.
                 [
@@ -88,50 +104,48 @@ class LanceServicer(LanceServicer):
                     for d in leiloes
                     if lance.leilao_id in d["id"]
                 ]
-                #message = serialize_dict(body)
-                #channel_flask.basic_publish(
-                #    exchange=EXCHANGE_NAME,
-                #    body=message,
-                #    routing_key="lance_validado",
-                #)
-                #print("[MS-Lance] Lance validado!")
 
-                #TODO: chamar stub de gateway OnLanceValidado
-                request = OnLanceValidadoRequest(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
-                
-                response_stub: OnLanceValidadoResponse = gatewayStub.OnLanceValidado(request)
-                print(response_stub.message)
-                return OnLanceResponse(ok=True, message="Lance Validado!")
+                try:
+                    response = gatewayStub.OnLanceValidado(
+                        OnLanceValidadoRequest(
+                            leilao_id=lance.leilao_id,
+                            client_id=lance.client_id,
+                            value=lance.value,
+                        )
+                    )
+
+                    if not response.ok:
+                        raise RuntimeError("...")
+
+                    print("[MS-Lance] Lance validado!")
+                    return OnLanceResponse(ok=True)
+                except Exception as e:
+                    print(f"[MS-Lance] Algum problema no Gateway foi encontrado: {e}")
+                    return OnLanceResponse(ok=False)
             else:
-                #message = serialize_dict(body)
-                #channel_flask.basic_publish(
-                #    exchange=EXCHANGE_NAME,
-                #    body=message,
-                #    routing_key="lance_invalidado",
-                #)
-                #print("[MS-Lance] Lance invalidado!")
+                try:
+                    response = gatewayStub.OnLanceInvalidado(
+                        OnLanceInvalidadoRequest(
+                            leilao_id=lance.leilao_id,
+                            client_id=lance.client_id,
+                            value=lance.value,
+                        )
+                    )
 
-                #TODO: chamar stub de gateway OnLanceInvalidado
-                #request = OnLanceInvalidadoRequest(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
-                response_stub: OnLanceInvalidadoResponse = gatewayStub.OnLanceInvalidado(leilao_id= lance.leilao_id, client_id= lance.client_id, value=lance.value)
-                print(response_stub.message)
-                return OnLanceResponse(ok=False, message="Lance invalidado!")
+                    if not response.ok:
+                        raise RuntimeError("...")
+
+                    print("[MS-Lance] Lance invalidado!")
+                    return OnLanceResponse(ok=True)
+                except Exception as e:
+                    print(f"[MS-Lance] Algum problema no Gateway foi encontrado: {e}")
+                    return OnLanceResponse(ok=False)
         else:
             print("[MS-Lance] leilao nao existe!")
 
-    #return jsonify("Comando inválido."), 400
-        return OnLanceResponse(ok=False, message="Erro!")
-        #return InitTransactionResponse(link="", location=request)
-    def OnInitLeilao(self, request: OnInitLeilaoRequest, _):
-        #if method.routing_key == "leilao_iniciado":
-        #    # Somente aceitará o lance se: ID do leilão existir e se o leilão estiver ativo;
-        #    leilao = deserialize_leilao(body)
-        #    leilao["highest_bid"] = "0"
-        #    leilao["winner"] = "ninguem"
-        #    leiloes.append(leilao)
-        #
-        #    print("[MS-Lance] Leilao iniciado!")
+        return OnLanceResponse(ok=False)
 
+    def OnInitLeilao(self, request: OnInitLeilaoRequest, _):
         leilao = {}
         leilao["id"] = request.id
         leilao["description"] = request.description
@@ -142,55 +156,71 @@ class LanceServicer(LanceServicer):
         leiloes.append(leilao)
 
         print("[MS-Lance] Leilao iniciado!")
+        return OnInitLeilaoResponse(ok=True)
 
-        return OnInitLeilaoResponse(ok=True, message="Sucesso em Lance")
-    
     def OnEndLeilao(self, request: OnEndLeilaoRequest, _):
-        #if method.routing_key == "leilao_finalizado":
-            # Requisito 4.5 - Ao finalizar um leilão, deve publicar na fila leilao_vencedor,
-            # informando o ID do leilão, o ID do vencedor do leilão e o valor
-            # negociado. O vencedor é o que efetuou o maior lance válido até o
-            # encerramento.
+        leilao_id = request.id
 
-            leilao_id = request.id
+        lance_vencedor = next(
+            (d.get("highest_bid") for d in leiloes if leilao_id in d["id"]), None
+        )
 
-            lance_vencedor = next(
-                (d.get("highest_bid") for d in leiloes if leilao_id in d["id"]), None
+        cliente_vencedor = next(
+            (d.get("winner") for d in leiloes if leilao_id in d["id"]), None
+        )
+
+        # Remove o leilão finalizado da lista de leilões ativos
+        leiloes.remove(next(d for d in leiloes if leilao_id in d["id"]))
+
+        try:
+            response_pagamento = pagamentoStub.OnWinner(
+                OnWinnerRequest(
+                    leilao_id=leilao_id,
+                    cliente_vencedor=cliente_vencedor,
+                    lance_vencedor=lance_vencedor,
+                )
             )
 
-            cliente_vencedor = next(
-                (d.get("winner") for d in leiloes if leilao_id in d["id"]), None
+            if not response_pagamento.ok:
+                raise RuntimeError("...")
+        except Exception as e:
+            print("[MS-Lance] Algum problema no MS-Pagamento foi encontrado: ", e)
+
+            return OnEndLeilaoResponse(
+                ok=False,
+                leilao_id=leilao_id,
+                cliente_vencedor=cliente_vencedor,
+                lance_vencedor=lance_vencedor,
             )
 
-            #message = serialize_dict(
-            #    {
-            #        "leilao_id": leilao_id,
-            #        "lance_vencedor": lance_vencedor,
-            #        "cliente_vencedor": cliente_vencedor,
-            #    }
-            #)
-            # Remove o leilão finalizado da lista de leilões ativos
-            leiloes.remove(next(d for d in leiloes if leilao_id in d["id"]))
+        try:
+            response_gateway: OnLeilaoVencedorResponse = gatewayStub.OnLeilaoVencedor(
+                OnLeilaoVencedorRequest(
+                    lance_vencedor=lance_vencedor,
+                    cliente_vencedor=cliente_vencedor,
+                    leilao_id=leilao_id,
+                )
+            )
 
-            #channel.basic_publish(
-            #    exchange=EXCHANGE_NAME, body=message, routing_key="leilao_vencedor"
-            #)
+            if not response_gateway.ok:
+                raise RuntimeError("...")
+        except Exception as e:
+            print("[MS-Lance] Algum problema no Gateway foi encontrado: ", e)
 
-            #TODO: chamar stub de gateway OnLeilaoVencedor
-            #TODO: chamar stub de pagamento OnWinner
-            print("[MS-Lance] Leilao finalizado!")
-            response_pagamento: OnWinnerResponse = pagamentoStub.OnWinner(leilao_id=request.id, cliente_vencedor=cliente_vencedor, lance_vencedor=lance_vencedor)
-            
-            print(response_pagamento.message)
-            
-            response_gateway: OnLeilaoVencedorResponse = gatewayStub.OnLeilaoVencedor(lance_vencedor=lance_vencedor, cliente_vencedor=cliente_vencedor, leilao_id=leilao_id)
-            
-            print(response_gateway.message)
+            return OnEndLeilaoResponse(
+                ok=False,
+                leilao_id=leilao_id,
+                cliente_vencedor=cliente_vencedor,
+                lance_vencedor=lance_vencedor,
+            )
 
-            return OnEndLeilaoResponse(ok=True, leilao_id = leilao_id, cliente_vencedor = cliente_vencedor, lance_vencedor = lance_vencedor)
-
-    
-
+        print("[MS-Lance] Leilao finalizado!")
+        return OnEndLeilaoResponse(
+            ok=True,
+            leilao_id=leilao_id,
+            cliente_vencedor=cliente_vencedor,
+            lance_vencedor=lance_vencedor,
+        )
 
 
 def serve():

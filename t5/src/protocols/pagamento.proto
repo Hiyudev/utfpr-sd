@@ -16,5 +16,4 @@ message OnWinnerRequest {
 
 message OnWinnerResponse {
     bool ok = 1;
-    string message = 2;
 }

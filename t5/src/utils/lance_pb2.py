@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blance.proto\"E\n\x0eOnLanceRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\".\n\x0fOnLanceResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"R\n\x13OnInitLeilaoRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\r\n\x05start\x18\x03 \x01(\x02\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x02\"\"\n\x14OnInitLeilaoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\" \n\x12OnEndLeilaoRequest\x12\n\n\x02id\x18\x01 \x01(\t\"f\n\x13OnEndLeilaoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x11\n\tleilao_id\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x04 \x01(\t2\xb2\x01\n\x05Lance\x12.\n\x07OnLance\x12\x0f.OnLanceRequest\x1a\x10.OnLanceResponse\"\x00\x12=\n\x0cOnInitLeilao\x12\x14.OnInitLeilaoRequest\x1a\x15.OnInitLeilaoResponse\"\x00\x12:\n\x0bOnEndLeilao\x12\x13.OnEndLeilaoRequest\x1a\x14.OnEndLeilaoResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0blance.proto\"E\n\x0eOnLanceRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\x1d\n\x0fOnLanceResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"R\n\x13OnInitLeilaoRequest\x12\n\n\x02id\x18\x01 \x01(\t\x12\x13\n\x0b\x64\x65scription\x18\x02 \x01(\t\x12\r\n\x05start\x18\x03 \x01(\x02\x12\x0b\n\x03\x65nd\x18\x04 \x01(\x02\"\"\n\x14OnInitLeilaoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\" \n\x12OnEndLeilaoRequest\x12\n\n\x02id\x18\x01 \x01(\t\"f\n\x13OnEndLeilaoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x11\n\tleilao_id\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x04 \x01(\t2\xb2\x01\n\x05Lance\x12.\n\x07OnLance\x12\x0f.OnLanceRequest\x1a\x10.OnLanceResponse\"\x00\x12=\n\x0cOnInitLeilao\x12\x14.OnInitLeilaoRequest\x1a\x15.OnInitLeilaoResponse\"\x00\x12:\n\x0bOnEndLeilao\x12\x13.OnEndLeilaoRequest\x1a\x14.OnEndLeilaoResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,15 +34,15 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ONLANCEREQUEST']._serialized_start=15
   _globals['_ONLANCEREQUEST']._serialized_end=84
   _globals['_ONLANCERESPONSE']._serialized_start=86
-  _globals['_ONLANCERESPONSE']._serialized_end=132
-  _globals['_ONINITLEILAOREQUEST']._serialized_start=134
-  _globals['_ONINITLEILAOREQUEST']._serialized_end=216
-  _globals['_ONINITLEILAORESPONSE']._serialized_start=218
-  _globals['_ONINITLEILAORESPONSE']._serialized_end=252
-  _globals['_ONENDLEILAOREQUEST']._serialized_start=254
-  _globals['_ONENDLEILAOREQUEST']._serialized_end=286
-  _globals['_ONENDLEILAORESPONSE']._serialized_start=288
-  _globals['_ONENDLEILAORESPONSE']._serialized_end=390
-  _globals['_LANCE']._serialized_start=393
-  _globals['_LANCE']._serialized_end=571
+  _globals['_ONLANCERESPONSE']._serialized_end=115
+  _globals['_ONINITLEILAOREQUEST']._serialized_start=117
+  _globals['_ONINITLEILAOREQUEST']._serialized_end=199
+  _globals['_ONINITLEILAORESPONSE']._serialized_start=201
+  _globals['_ONINITLEILAORESPONSE']._serialized_end=235
+  _globals['_ONENDLEILAOREQUEST']._serialized_start=237
+  _globals['_ONENDLEILAOREQUEST']._serialized_end=269
+  _globals['_ONENDLEILAORESPONSE']._serialized_start=271
+  _globals['_ONENDLEILAORESPONSE']._serialized_end=373
+  _globals['_LANCE']._serialized_start=376
+  _globals['_LANCE']._serialized_end=554
 # @@protoc_insertion_point(module_scope)

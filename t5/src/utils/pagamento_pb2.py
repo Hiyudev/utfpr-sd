@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fpagamento.proto\"V\n\x0fOnWinnerRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\"/\n\x10OnWinnerResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2<\n\tPagamento\x12/\n\x08OnWinner\x12\x10.OnWinnerRequest\x1a\x11.OnWinnerResponseb\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\x0fpagamento.proto\"V\n\x0fOnWinnerRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\"\x1e\n\x10OnWinnerResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x32<\n\tPagamento\x12/\n\x08OnWinner\x12\x10.OnWinnerRequest\x1a\x11.OnWinnerResponseb\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,7 +34,7 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ONWINNERREQUEST']._serialized_start=19
   _globals['_ONWINNERREQUEST']._serialized_end=105
   _globals['_ONWINNERRESPONSE']._serialized_start=107
-  _globals['_ONWINNERRESPONSE']._serialized_end=154
-  _globals['_PAGAMENTO']._serialized_start=156
-  _globals['_PAGAMENTO']._serialized_end=216
+  _globals['_ONWINNERRESPONSE']._serialized_end=137
+  _globals['_PAGAMENTO']._serialized_start=139
+  _globals['_PAGAMENTO']._serialized_end=199
 # @@protoc_insertion_point(module_scope)

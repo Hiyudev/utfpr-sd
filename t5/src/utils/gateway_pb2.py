@@ -24,7 +24,7 @@ _sym_db = _symbol_database.Default()
 
 
 
-DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rgateway.proto\"M\n\x16OnLanceValidadoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"6\n\x17OnLanceValidadoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"O\n\x18OnLanceInvalidadoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"8\n\x19OnLanceInvalidadoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"^\n\x17OnLeilaoVencedorRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\"7\n\x18OnLeilaoVencedorResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"k\n\x16OnLinkPagamentoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\x12\x0c\n\x04link\x18\x04 \x01(\t\"6\n\x17OnLinkPagamentoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t\"d\n\x18OnStatusPagamentoRequest\x12\r\n\x05value\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0etransaction_id\x18\x03 \x01(\t\x12\x11\n\tclient_id\x18\x04 \x01(\t\"8\n\x19OnStatusPagamentoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x12\x0f\n\x07message\x18\x02 \x01(\t2\x80\x03\n\x07Gateway\x12\x46\n\x0fOnLanceValidado\x12\x17.OnLanceValidadoRequest\x1a\x18.OnLanceValidadoResponse\"\x00\x12L\n\x11OnLanceInvalidado\x12\x19.OnLanceInvalidadoRequest\x1a\x1a.OnLanceInvalidadoResponse\"\x00\x12I\n\x10OnLeilaoVencedor\x12\x18.OnLeilaoVencedorRequest\x1a\x19.OnLeilaoVencedorResponse\"\x00\x12\x46\n\x0fOnLinkPagamento\x12\x17.OnLinkPagamentoRequest\x1a\x18.OnLinkPagamentoResponse\"\x00\x12L\n\x11OnStatusPagamento\x12\x19.OnStatusPagamentoRequest\x1a\x1a.OnStatusPagamentoResponse\"\x00\x62\x06proto3')
+DESCRIPTOR = _descriptor_pool.Default().AddSerializedFile(b'\n\rgateway.proto\"M\n\x16OnLanceValidadoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"%\n\x17OnLanceValidadoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"O\n\x18OnLanceInvalidadoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x11\n\tclient_id\x18\x02 \x01(\t\x12\r\n\x05value\x18\x03 \x01(\t\"\'\n\x19OnLanceInvalidadoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"^\n\x17OnLeilaoVencedorRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\"&\n\x18OnLeilaoVencedorResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"k\n\x16OnLinkPagamentoRequest\x12\x11\n\tleilao_id\x18\x01 \x01(\t\x12\x16\n\x0elance_vencedor\x18\x02 \x01(\t\x12\x18\n\x10\x63liente_vencedor\x18\x03 \x01(\t\x12\x0c\n\x04link\x18\x04 \x01(\t\"%\n\x17OnLinkPagamentoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\"d\n\x18OnStatusPagamentoRequest\x12\r\n\x05value\x18\x01 \x01(\t\x12\x0e\n\x06status\x18\x02 \x01(\t\x12\x16\n\x0etransaction_id\x18\x03 \x01(\t\x12\x11\n\tclient_id\x18\x04 \x01(\t\"\'\n\x19OnStatusPagamentoResponse\x12\n\n\x02ok\x18\x01 \x01(\x08\x32\x80\x03\n\x07Gateway\x12\x46\n\x0fOnLanceValidado\x12\x17.OnLanceValidadoRequest\x1a\x18.OnLanceValidadoResponse\"\x00\x12L\n\x11OnLanceInvalidado\x12\x19.OnLanceInvalidadoRequest\x1a\x1a.OnLanceInvalidadoResponse\"\x00\x12I\n\x10OnLeilaoVencedor\x12\x18.OnLeilaoVencedorRequest\x1a\x19.OnLeilaoVencedorResponse\"\x00\x12\x46\n\x0fOnLinkPagamento\x12\x17.OnLinkPagamentoRequest\x1a\x18.OnLinkPagamentoResponse\"\x00\x12L\n\x11OnStatusPagamento\x12\x19.OnStatusPagamentoRequest\x1a\x1a.OnStatusPagamentoResponse\"\x00\x62\x06proto3')
 
 _globals = globals()
 _builder.BuildMessageAndEnumDescriptors(DESCRIPTOR, _globals)
@@ -34,23 +34,23 @@ if not _descriptor._USE_C_DESCRIPTORS:
   _globals['_ONLANCEVALIDADOREQUEST']._serialized_start=17
   _globals['_ONLANCEVALIDADOREQUEST']._serialized_end=94
   _globals['_ONLANCEVALIDADORESPONSE']._serialized_start=96
-  _globals['_ONLANCEVALIDADORESPONSE']._serialized_end=150
-  _globals['_ONLANCEINVALIDADOREQUEST']._serialized_start=152
-  _globals['_ONLANCEINVALIDADOREQUEST']._serialized_end=231
-  _globals['_ONLANCEINVALIDADORESPONSE']._serialized_start=233
-  _globals['_ONLANCEINVALIDADORESPONSE']._serialized_end=289
-  _globals['_ONLEILAOVENCEDORREQUEST']._serialized_start=291
-  _globals['_ONLEILAOVENCEDORREQUEST']._serialized_end=385
-  _globals['_ONLEILAOVENCEDORRESPONSE']._serialized_start=387
-  _globals['_ONLEILAOVENCEDORRESPONSE']._serialized_end=442
-  _globals['_ONLINKPAGAMENTOREQUEST']._serialized_start=444
-  _globals['_ONLINKPAGAMENTOREQUEST']._serialized_end=551
-  _globals['_ONLINKPAGAMENTORESPONSE']._serialized_start=553
-  _globals['_ONLINKPAGAMENTORESPONSE']._serialized_end=607
-  _globals['_ONSTATUSPAGAMENTOREQUEST']._serialized_start=609
-  _globals['_ONSTATUSPAGAMENTOREQUEST']._serialized_end=709
-  _globals['_ONSTATUSPAGAMENTORESPONSE']._serialized_start=711
-  _globals['_ONSTATUSPAGAMENTORESPONSE']._serialized_end=767
-  _globals['_GATEWAY']._serialized_start=770
-  _globals['_GATEWAY']._serialized_end=1154
+  _globals['_ONLANCEVALIDADORESPONSE']._serialized_end=133
+  _globals['_ONLANCEINVALIDADOREQUEST']._serialized_start=135
+  _globals['_ONLANCEINVALIDADOREQUEST']._serialized_end=214
+  _globals['_ONLANCEINVALIDADORESPONSE']._serialized_start=216
+  _globals['_ONLANCEINVALIDADORESPONSE']._serialized_end=255
+  _globals['_ONLEILAOVENCEDORREQUEST']._serialized_start=257
+  _globals['_ONLEILAOVENCEDORREQUEST']._serialized_end=351
+  _globals['_ONLEILAOVENCEDORRESPONSE']._serialized_start=353
+  _globals['_ONLEILAOVENCEDORRESPONSE']._serialized_end=391
+  _globals['_ONLINKPAGAMENTOREQUEST']._serialized_start=393
+  _globals['_ONLINKPAGAMENTOREQUEST']._serialized_end=500
+  _globals['_ONLINKPAGAMENTORESPONSE']._serialized_start=502
+  _globals['_ONLINKPAGAMENTORESPONSE']._serialized_end=539
+  _globals['_ONSTATUSPAGAMENTOREQUEST']._serialized_start=541
+  _globals['_ONSTATUSPAGAMENTOREQUEST']._serialized_end=641
+  _globals['_ONSTATUSPAGAMENTORESPONSE']._serialized_start=643
+  _globals['_ONSTATUSPAGAMENTORESPONSE']._serialized_end=682
+  _globals['_GATEWAY']._serialized_start=685
+  _globals['_GATEWAY']._serialized_end=1069
 # @@protoc_insertion_point(module_scope)

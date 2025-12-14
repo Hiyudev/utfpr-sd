@@ -42,15 +42,12 @@ class OnWinnerResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnWinnerResponse: typing_extensions.TypeAlias = OnWinnerResponse

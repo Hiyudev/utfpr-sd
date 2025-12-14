@@ -24,7 +24,6 @@ message OnLanceValidadoRequest {
 
 message OnLanceValidadoResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnLanceInvalidadoRequest {
@@ -35,7 +34,6 @@ message OnLanceInvalidadoRequest {
 
 message OnLanceInvalidadoResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnLeilaoVencedorRequest {
@@ -46,7 +44,6 @@ message OnLeilaoVencedorRequest {
 
 message OnLeilaoVencedorResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnLinkPagamentoRequest {
@@ -58,7 +55,6 @@ message OnLinkPagamentoRequest {
 
 message OnLinkPagamentoResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnStatusPagamentoRequest {
@@ -70,6 +66,4 @@ message OnStatusPagamentoRequest {
 
 message OnStatusPagamentoResponse {
     bool ok = 1;
-    string message = 2;
-
 }

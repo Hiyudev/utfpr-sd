@@ -17,16 +17,20 @@ from common.serial import deserialize_dict, serialize_dict
 from utils.pagamento_pb2 import OnWinnerRequest, OnWinnerResponse
 from utils.pagamento_pb2_grpc import PagamentoServicer, add_PagamentoServicer_to_server
 
-from utils.gateway_pb2 import OnLinkPagamentoRequest, OnLinkPagamentoResponse, OnStatusPagamentoRequest, OnStatusPagamentoResponse
+from utils.gateway_pb2 import (
+    OnLinkPagamentoRequest,
+    OnLinkPagamentoResponse,
+    OnStatusPagamentoRequest,
+    OnStatusPagamentoResponse,
+)
 from utils.gateway_pb2_grpc import GatewayStub
 
-channel = grpc.insecure_channel('localhost:50054')
+channel = grpc.insecure_channel("localhost:50054")
 gatewayStub = GatewayStub(channel)
 
 app = Flask(__name__)
 
 # Variáveis globais
-# global_exchange_name = "exchange"
 global_externo_url = "http://127.0.0.1:5555/transaction"
 global_transactions_mutex = None
 global_transactions: list[dict[str, any]] = []
@@ -54,21 +58,13 @@ def receive_webhook():
             return str(e), 400
     else:
         return jsonify("Method Not Allowed"), 405
-    
+
 
 class PagamentoServicer(PagamentoServicer):
     def OnWinner(self, request: OnWinnerRequest, _):
-
-
-        data = deserialize_dict(body)
-
-        assert "leilao_id" in data
-        assert "lance_vencedor" in data
-        assert "cliente_vencedor" in data
-
         payload = {
-            "value": data["lance_vencedor"],
-            "client_id": data["cliente_vencedor"],
+            "value": request.lance_vencedor,
+            "client_id": request.cliente_vencedor,
         }
 
         try:
@@ -77,23 +73,36 @@ class PagamentoServicer(PagamentoServicer):
 
             link = response.text.replace("\n", "")
 
-            print("[MS-Pagamento] Um link de pagamento foi criado.")
+            try:
+                response = gatewayStub.OnLinkPagamento(
+                    OnLinkPagamentoRequest(
+                        leilao_id=request.leilao_id,
+                        lance_vencedor=request.lance_vencedor,
+                        cliente_vencedor=request.cliente_vencedor,
+                        link=link,
+                    )
+                )
 
-            body = data.copy()
-            body["link"] = link
-            #body = serialize_dict(body)
+                if not response.ok:
+                    raise RuntimeError("...")
 
-            # TODO: Chamar stub de gateway e enviar o link para la com OnLinkPagamento
-            gateway_response: OnLinkPagamentoResponse = gatewayStub.OnLinkPagamento(leilao_id=body["leilao_id"], lance_vencedor=body["lance_vencedor"], cliente_vencedor=body["cliente_vencedor"], link=body["link"])
-                
-            print(gateway_response.message)
+                print(
+                    "[MS-Pagamento] Um link de pagamento foi criado e enviado link de pagamento."
+                )
+                return OnWinnerResponse(ok=True)
+            except Exception as e:
+                print(
+                    "[MS-Pagamento] Algum problema no MS-Externo ou Gateway foi encontrado:",
+                    e
+                )
+                return OnWinnerResponse(ok=False)
+        except Exception as e:
+            print(
+                "[MS-Pagamento] Algum problema no MS-Externo ou Gateway foi encontrado:",
+                e,
+            )
+            return OnWinnerResponse(ok=False)
 
-            print("[MS-Pagamento] Enviado link de pagamento.")
-            return OnWinnerResponse(ok= True, message= "[MS-Pagamento] Enviado link de pagamento.")
-        except requests.exceptions.RequestException as e:
-            print("[MS-Pagamento] Algum problema no MS-Externo foi encontrado.", e)
-            return OnWinnerResponse(ok= False, message= "[MS-Pagamento] Algum problema no MS-Externo foi encontrado.")
-        
 
 def serve():
     server = grpc.server(futures.ThreadPoolExecutor(max_workers=1))
@@ -101,6 +110,10 @@ def serve():
     server.add_insecure_port("[::]:50053")
     server.start()
     print("starting pagamento server...")
+    server.wait_for_termination()
+
+
+def checker():
     try:
         while True:
             sleep(0.2)  # Dorme por 200ms
@@ -112,42 +125,39 @@ def serve():
                 continue
 
             for transaction in global_transactions:
-                print("[MS-Pagamento] Enviado uma mensagem para 'status_pagamento'.")
+                response = gatewayStub.OnStatusPagamento(
+                    OnStatusPagamentoRequest(
+                        value=str(transaction["value"]),
+                        status=str(transaction["status"]),
+                        transaction_id=transaction["transaction_id"],
+                        client_id=transaction["client_id"],
+                    )
+                )
 
-                payload = serialize_dict(transaction)
-
-                #TODO: chamar stub de gateway e enviar mensagem com OnStatusPagamento
-                
-                gateway_response: OnStatusPagamentoResponse = gatewayStub.OnStatusPagamento(value=transaction["value"], status=transaction["status"], transaction_id=transaction["transaction_id"], client_id=transaction["client_id"])
-                
-                print(gateway_response.message)
-
-                #channel_mutex.acquire()
-                #channel.basic_publish(
-                #    exchange=global_exchange_name,
-                #    routing_key="status_pagamento",
-                #   body=payload,
-                #)
-                #channel_mutex.release()
+                if response.ok:
+                    print(
+                        "[MS-Pagamento] Enviado uma mensagem para 'status_pagamento'."
+                    )
 
             global_transactions.clear()
             global_transactions_mutex.release()
 
     except KeyboardInterrupt:
         print("[MS-Pagamento] Exiting...")
-    #server.wait_for_termination()
+
 
 def main_flask():
     app.run(port=5000)
 
+
 if __name__ == "__main__":
     global_transactions_mutex = Lock()
-    
+
     threads: list[Thread] = []
     threads.append(Thread(target=serve, daemon=True))
+    threads.append(Thread(target=checker, daemon=True))
 
     for thread in threads:
         thread.start()
 
     main_flask()
-

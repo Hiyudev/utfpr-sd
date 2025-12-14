@@ -42,16 +42,13 @@ class OnLanceValidadoResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnLanceValidadoResponse: typing_extensions.TypeAlias = OnLanceValidadoResponse
 
@@ -81,16 +78,13 @@ class OnLanceInvalidadoResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnLanceInvalidadoResponse: typing_extensions.TypeAlias = OnLanceInvalidadoResponse
 
@@ -120,16 +114,13 @@ class OnLeilaoVencedorResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnLeilaoVencedorResponse: typing_extensions.TypeAlias = OnLeilaoVencedorResponse
 
@@ -162,16 +153,13 @@ class OnLinkPagamentoResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnLinkPagamentoResponse: typing_extensions.TypeAlias = OnLinkPagamentoResponse
 
@@ -204,15 +192,12 @@ class OnStatusPagamentoResponse(google.protobuf.message.Message):
     DESCRIPTOR: google.protobuf.descriptor.Descriptor
 
     OK_FIELD_NUMBER: builtins.int
-    MESSAGE_FIELD_NUMBER: builtins.int
     ok: builtins.bool
-    message: builtins.str
     def __init__(
         self,
         *,
         ok: builtins.bool = ...,
-        message: builtins.str = ...,
     ) -> None: ...
-    def ClearField(self, field_name: typing.Literal["message", b"message", "ok", b"ok"]) -> None: ...
+    def ClearField(self, field_name: typing.Literal["ok", b"ok"]) -> None: ...
 
 Global___OnStatusPagamentoResponse: typing_extensions.TypeAlias = OnStatusPagamentoResponse

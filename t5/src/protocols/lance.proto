@@ -20,7 +20,6 @@ message OnLanceRequest {
 
 message OnLanceResponse {
     bool ok = 1;
-    string message = 2;
 }
 
 message OnInitLeilaoRequest {
